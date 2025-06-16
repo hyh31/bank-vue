@@ -32,7 +32,7 @@ defineProps<{
 
 <template>
   <SidebarGroup>
-    <SidebarGroupLabel>Platform</SidebarGroupLabel>
+    <SidebarGroupLabel>监控平台</SidebarGroupLabel>
     <SidebarMenu>
       <Collapsible
         v-for="item in items"

@@ -2,16 +2,19 @@
 import type { SidebarProps } from '@/components/ui/sidebar'
 
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  Database,
   GalleryVerticalEnd,
-  Map,
+  LineChart,
+  Monitor,
   PieChart,
+  Server,
   Settings2,
-  SquareTerminal
+  Shield,
+  TrendingUp,
+  Zap
 } from 'lucide-vue-next'
 import NavMain from '@/components/NavMain.vue'
 import NavProjects from '@/components/NavProjects.vue'
@@ -30,112 +33,162 @@ const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: 'icon'
 })
 
-// This is sample data.
+// 银行监控告警系统数据
 const data = {
   user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg'
+    name: 'Hyphen',
+    email: 'admin@bankmonitor.com',
+    avatar: '/avatars/user.jpg'
   },
   teams: [
     {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
+      name: '监控中心',
+      logo: Monitor,
       plan: 'Enterprise'
     },
     {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup'
+      name: '风控部门',
+      logo: Shield,
+      plan: 'Professional'
     },
     {
-      name: 'Evil Corp.',
-      logo: Command,
-      plan: 'Free'
+      name: '运维团队',
+      logo: Server,
+      plan: 'Standard'
     }
   ],
   navMain: [
     {
-      title: 'Playground',
+      title: '仪表盘',
       url: '#',
-      icon: SquareTerminal,
+      icon: BarChart3,
       isActive: true,
       items: [
         {
-          title: 'History',
+          title: '监控概览',
           url: '#'
         },
         {
-          title: 'Starred',
+          title: '关键指标',
           url: '#'
         },
         {
-          title: 'Settings',
+          title: '实时数据',
           url: '#'
         }
       ]
     },
     {
-      title: 'Models',
+      title: '告警监控',
       url: '#',
-      icon: Bot,
+      icon: Monitor,
       items: [
         {
-          title: 'Genesis',
+          title: '实时告警大屏',
           url: '#'
         },
         {
-          title: 'Explorer',
+          title: '告警统计分析',
           url: '#'
         },
         {
-          title: 'Quantum',
+          title: '系统健康监控',
+          url: '#'
+        },
+        {
+          title: '业务风险监控',
           url: '#'
         }
       ]
     },
     {
-      title: 'Documentation',
+      title: '数据可视化',
       url: '#',
-      icon: BookOpen,
+      icon: BarChart3,
       items: [
         {
-          title: 'Introduction',
+          title: '交易趋势分析',
           url: '#'
         },
         {
-          title: 'Get Started',
+          title: '风险指标图表',
           url: '#'
         },
         {
-          title: 'Tutorials',
+          title: '业务数据报表',
           url: '#'
         },
         {
-          title: 'Changelog',
+          title: '实时数据流',
           url: '#'
         }
       ]
     },
     {
-      title: 'Settings',
+      title: '告警中心',
       url: '#',
-      icon: Settings2,
+      icon: AlertTriangle,
       items: [
         {
-          title: 'General',
+          title: '实时告警',
           url: '#'
         },
         {
-          title: 'Team',
+          title: '告警统计',
           url: '#'
         },
         {
-          title: 'Billing',
+          title: '告警配置',
           url: '#'
         },
         {
-          title: 'Limits',
+          title: '历史记录',
+          url: '#'
+        }
+      ]
+    },
+    {
+      title: '系统监控',
+      url: '#',
+      icon: Activity,
+      items: [
+        {
+          title: '系统性能',
+          url: '#'
+        },
+        {
+          title: '网络监控',
+          url: '#'
+        },
+        {
+          title: '数据库监控',
+          url: '#'
+        },
+        {
+          title: '应用服务监控',
+          url: '#'
+        }
+      ]
+    },
+    {
+      title: '数据管理',
+      url: '#',
+      icon: Database,
+      items: [
+        {
+          title: '数据源配置',
+          url: '#'
+        },
+        {
+          title: '数据质量监控',
+          url: '#'
+        },
+        {
+          title: '数据同步状态',
+          url: '#'
+        },
+        {
+          title: '备份管理',
           url: '#'
         }
       ]
@@ -143,19 +196,19 @@ const data = {
   ],
   projects: [
     {
-      name: 'Design Engineering',
+      name: '交易监控',
       url: '#',
-      icon: Frame
+      icon: TrendingUp
     },
     {
-      name: 'Sales & Marketing',
+      name: '风险分析',
+      url: '#',
+      icon: Shield
+    },
+    {
+      name: '报表中心',
       url: '#',
       icon: PieChart
-    },
-    {
-      name: 'Travel',
-      url: '#',
-      icon: Map
     }
   ]
 }

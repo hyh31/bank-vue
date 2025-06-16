@@ -1,34 +1,284 @@
-# electron-app
+# 银行告警监控系统
 
-An Electron application with Vue and TypeScript
+一个基于 Electron + Vue 3 + TypeScript 的现代化银行告警监控系统，提供实时告警监控、地域分布统计、系统状态监控和交易数据管理等功能。
 
-## Recommended IDE Setup
+## 🎯 项目概述
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
+本系统专为银行业务监控设计，提供直观的仪表板界面，实时展示关键业务指标、安全告警和系统状态。采用现代化的技术栈和响应式设计，确保在不同分辨率下都能提供最佳的用户体验。
 
-## Project Setup
+## ✨ 核心功能
 
-### Install
+### 📊 关键指标监控
+- **今日告警总数**：实时统计当日所有告警数量
+- **高风险交易**：监控高风险交易笔数和趋势
+- **监控账户数**：显示当前监控的账户总数
+- **系统健康度**：实时系统健康状态评估
 
+### 🚨 实时告警系统
+- **三级告警分类**：严重、警告、信息三个级别
+- **自动滚动展示**：200px固定高度，每3秒自动滚动
+- **无缝循环**：连续滚动显示，无跳跃感
+- **交互式操作**：点击查看详细信息
+
+### 🌍 地域分布统计
+- **8个主要城市**：北京、上海、广州、深圳、杭州、成都、武汉、西安
+- **车轮式滚动**：连续不断的平滑滚动效果
+- **实时数据**：显示交易笔数和占比
+- **彩色标识**：不同城市使用不同颜色区分
+
+### 🖥️ 系统状态监控
+- **真实CPU使用率**：使用 systeminformation 库获取真实的系统CPU使用率
+- **真实内存使用率**：实时监控内存占用情况，显示已用/总量
+- **网络延迟监控**：网络连接质量检测（可扩展为真实ping测试）
+- **数据库连接状态**：数据库连接池状态监控
+- **自动状态判断**：根据使用率自动判断正常/警告/严重状态
+- **定时刷新**：每10秒自动更新系统状态数据
+
+### 📋 交易监控数据
+- **完整交易信息**：ID、账户、金额、类型、状态等
+- **风险等级标识**：高、中、低风险分级显示
+- **实时状态更新**：交易状态实时同步
+- **详细操作**：支持查看交易详情
+
+## 🛠️ 技术栈
+
+### 前端框架
+- **Electron**: 跨平台桌面应用框架
+- **Vue 3**: 渐进式JavaScript框架
+- **TypeScript**: 类型安全的JavaScript超集
+- **Vite**: 现代化构建工具
+
+### UI组件库
+- **shadcn-vue**: 现代化UI组件库
+- **Tailwind CSS**: 实用优先的CSS框架
+- **Lucide Vue**: 精美的图标库
+
+### 开发工具
+- **Electron Vite**: Electron应用的Vite集成
+- **ESLint**: 代码质量检查
+- **Prettier**: 代码格式化
+
+## 🚀 快速开始
+
+### 环境要求
+- Node.js >= 16.0.0
+- npm >= 8.0.0
+
+### 安装依赖
 ```bash
-$ npm install
+npm install
 ```
 
-### Development
-
+### 开发模式
 ```bash
-$ npm run dev
+npm run dev
 ```
 
-### Build
-
+### 构建应用
 ```bash
-# For windows
-$ npm run build:win
+# 构建所有平台
+npm run build
 
-# For macOS
-$ npm run build:mac
+# 仅构建Windows
+npm run build:win
 
-# For Linux
-$ npm run build:linux
+# 仅构建macOS
+npm run build:mac
+
+# 仅构建Linux
+npm run build:linux
 ```
+
+## 📱 响应式设计
+
+系统针对不同分辨率进行了优化：
+
+### 主要支持分辨率
+- **1920×1080**: 主要开发和优化目标
+- **1366×768**: 笔记本电脑标准分辨率
+- **1440×900**: MacBook标准分辨率
+- **其他分辨率**: 自适应响应式布局
+
+### 布局特点
+- **三层布局结构**: 关键指标 → 实时监控 → 交易数据
+- **固定高度设计**: 避免滚动条，一屏展示所有内容
+- **响应式网格**: 根据屏幕尺寸自动调整列数
+
+## 🎨 界面设计
+
+### 设计原则
+- **专业性**: 银行级别的专业界面设计
+- **易用性**: 直观的操作和清晰的信息层次
+- **美观性**: 现代化的视觉设计和动画效果
+- **一致性**: 统一的设计语言和交互模式
+
+### 颜色方案
+- **主色调**: 蓝色系，体现专业和信任
+- **告警色**: 红色（严重）、黄色（警告）、蓝色（信息）
+- **状态色**: 绿色（正常）、橙色（警告）、红色（异常）
+
+### 动画效果
+- **悬停效果**: 卡片缩放、阴影变化
+- **滚动动画**: 平滑的连续滚动
+- **状态变化**: 渐变过渡效果
+
+## 📁 项目结构
+
+```
+electron-app/
+├── src/
+│   ├── main/                 # 主进程代码
+│   ├── preload/              # 预加载脚本
+│   └── renderer/             # 渲染进程代码
+│       ├── src/
+│       │   ├── components/   # Vue组件
+│       │   │   ├── ui/       # UI基础组件
+│       │   │   └── Dashboard.vue  # 主仪表板组件
+│       │   ├── assets/       # 静态资源
+│       │   └── main.ts       # 入口文件
+│       └── index.html        # HTML模板
+├── out/                      # 构建输出目录
+├── package.json              # 项目配置
+└── README.md                 # 项目文档
+```
+
+## 🔧 配置说明
+
+### 主要配置文件
+- `package.json`: 项目依赖和脚本配置
+- `electron.vite.config.ts`: Electron Vite构建配置
+- `components.json`: shadcn-vue组件配置
+- `tailwind.config.js`: Tailwind CSS配置
+
+### 环境变量
+系统支持通过环境变量进行配置：
+- `NODE_ENV`: 运行环境（development/production）
+- `VITE_API_URL`: API服务器地址
+- `VITE_WS_URL`: WebSocket服务器地址
+
+## 📊 数据接口
+
+### 告警数据结构
+```typescript
+interface AlertItem {
+  id: string
+  title: string
+  description: string
+  level: 'critical' | 'warning' | 'info'
+  timestamp: Date
+}
+```
+
+### 交易数据结构
+```typescript
+interface TransactionItem {
+  id: string
+  account: string
+  amount: number
+  type: string
+  status: 'completed' | 'pending' | 'failed'
+  riskLevel: 'high' | 'medium' | 'low'
+  timestamp: Date
+}
+```
+
+### 地域统计数据结构
+```typescript
+interface RegionStat {
+  name: string
+  count: number
+  percentage: number
+  color: string
+  variant: string
+}
+```
+
+## 🔄 实时更新机制
+
+### 自动刷新
+- **数据刷新**: 每30秒自动刷新一次数据
+- **告警滚动**: 每3秒自动滚动显示
+- **地域滚动**: 连续平滑滚动，60fps刷新率
+
+### 手动刷新
+- **全局刷新**: 顶部刷新按钮
+- **交易数据刷新**: 交易表格独立刷新按钮
+- **状态指示**: 刷新时显示加载状态
+
+## 🎯 性能优化
+
+### 渲染优化
+- **虚拟滚动**: 大数据量时使用虚拟滚动
+- **懒加载**: 组件按需加载
+- **缓存策略**: 合理的数据缓存机制
+
+### 动画优化
+- **requestAnimationFrame**: 使用浏览器优化的动画API
+- **GPU加速**: 使用transform进行硬件加速
+- **防抖节流**: 避免过度渲染
+
+## 🔒 安全考虑
+
+### 数据安全
+- **敏感信息脱敏**: 账户号码等敏感信息部分隐藏
+- **权限控制**: 基于角色的访问控制
+- **数据加密**: 传输和存储数据加密
+
+### 应用安全
+- **CSP策略**: 内容安全策略防护
+- **沙箱模式**: 渲染进程沙箱隔离
+- **更新机制**: 安全的自动更新
+
+## 🐛 故障排除
+
+### 常见问题
+1. **应用启动失败**: 检查Node.js版本和依赖安装
+2. **界面显示异常**: 清除缓存重新启动
+3. **数据不更新**: 检查网络连接和API配置
+4. **性能问题**: 检查系统资源占用
+
+### 调试方法
+- **开发者工具**: F12打开Chrome DevTools
+- **日志查看**: 查看控制台输出
+- **网络监控**: 检查API请求状态
+
+## 📝 更新日志
+
+### v1.0.0 (2024-06-16)
+- ✨ 初始版本发布
+- 🎯 完整的仪表板功能
+- 🚨 实时告警系统
+- 🌍 地域分布统计
+- 📊 交易监控数据
+- 🎨 响应式设计
+
+## 🤝 贡献指南
+
+### 开发流程
+1. Fork项目到个人仓库
+2. 创建功能分支
+3. 提交代码变更
+4. 创建Pull Request
+5. 代码审查和合并
+
+### 代码规范
+- 使用TypeScript进行类型检查
+- 遵循ESLint代码规范
+- 使用Prettier格式化代码
+- 编写单元测试
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 📞 联系方式
+
+如有问题或建议，请通过以下方式联系：
+
+- 📧 邮箱: [your-email@example.com]
+- 🐛 问题反馈: [GitHub Issues]
+- 📖 文档: [项目Wiki]
+
+---
+
+**银行告警监控系统** - 专业、安全、高效的银行业务监控解决方案 🏦✨
