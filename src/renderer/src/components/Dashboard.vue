@@ -49,15 +49,15 @@
     </div>
 
     <!-- 主要内容区域 -->
-    <div class="flex-1 p-4 h-full overflow-hidden">
-      <div class="h-full grid grid-rows-[auto_auto_1fr] gap-4">
-        <!-- 关键指标卡片 -->
-        <div class="grid grid-cols-4 gap-4">
-          <Card
-            v-for="metric in keyMetrics"
-            :key="metric.id"
-            class="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-primary/50 group hover:bg-primary/5"
-          >
+    <div class="flex-1 p-4 space-y-4 overflow-hidden">
+      <!-- 关键指标卡片 -->
+      <div class="grid grid-cols-4 gap-4">
+        <Card
+          v-for="metric in keyMetrics"
+          :key="metric.id"
+          class="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-primary/50 group hover:bg-primary/5"
+          style="height: 145px"
+        >
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle class="text-sm font-medium group-hover:text-primary transition-colors">
               {{ metric.title }}
@@ -89,16 +89,16 @@
               <span class="ml-1">较昨日</span>
             </div>
           </CardContent>
-          </Card>
-        </div>
+        </Card>
+      </div>
 
-        <!-- 实时告警区域 -->
-        <div class="grid grid-cols-3 gap-4">
-          <!-- 告警列表 -->
-          <div class="col-span-1">
+      <!-- 实时告警区域 -->
+      <div class="grid grid-cols-3 gap-4">
+        <!-- 告警列表 -->
+        <div class="col-span-1">
           <Card
             class="hover:shadow-md transition-all duration-300 hover:border-primary/30"
-            style="height: 300px"
+            style="height: 290px"
           >
             <CardHeader class="pb-2">
               <CardTitle class="flex items-center">
@@ -181,12 +181,12 @@
               </div>
             </CardContent>
           </Card>
-          </div>
+        </div>
 
         <!-- 告警统计和系统状态 -->
         <div class="space-y-4">
           <!-- 昨日地域分布统计 -->
-          <Card class="hover:shadow-md transition-shadow duration-300" style="height: 300px">
+          <Card class="hover:shadow-md transition-shadow duration-300" style="height: 290px">
             <CardHeader class="pb-2">
               <CardTitle class="flex items-center">
                 <BarChart3 class="w-4 h-4 mr-2" />
@@ -246,7 +246,7 @@
 
         <div class="space-y-4">
           <!-- 系统状态监控 -->
-          <Card class="hover:shadow-md transition-shadow duration-300" style="height: 300px">
+          <Card class="hover:shadow-md transition-shadow duration-300" style="height: 290px">
             <CardHeader>
               <CardTitle class="flex items-center">
                 <Activity class="w-4 h-4 mr-2" />
@@ -254,7 +254,7 @@
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div class="space-y-3">
+              <div class="space-y-5">
                 <div v-for="status in systemStatusList" :key="status.name" class="space-y-2">
                   <div class="flex items-center justify-between">
                     <span class="text-sm font-medium">{{ status.name }}</span>
@@ -275,8 +275,8 @@
         </div>
       </div>
 
-        <!-- 监控数据表格 -->
-        <Card class="hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
+      <!-- 监控数据表格 -->
+      <Card class="hover:shadow-md transition-shadow duration-300" style="height: 220px">
         <CardHeader>
           <CardTitle class="flex items-center justify-between">
             <div class="flex items-center">
@@ -289,9 +289,8 @@
             </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent class="flex-1 overflow-hidden">
-          <div class="h-full overflow-auto">
-            <Table>
+        <CardContent class="overflow-y-auto">
+          <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>交易ID</TableHead>
@@ -341,10 +340,8 @@
               </TableRow>
             </TableBody>
           </Table>
-          </div>
         </CardContent>
       </Card>
-      </div>
     </div>
   </div>
 </template>
@@ -1018,9 +1015,34 @@ onUnmounted(() => {
   console.log('✅ Dashboard组件卸载完成')
 })
 
+/**
+ * 计算缩放比例
+ */
+// 缩放比例
+const scale = ref(1)
 
+// 计算
+const calcuateScale = () => {
+  const width = window.innerWidth
+  const height = window.innerHeight
+  // 计算宽度和高度的缩放比例，取最小值保证完整显示
+  scale.value = Math.min(width / 1920, height / 1080)
+  console.log(`窗口尺寸: ${width}x${height}, 缩放比例: ${scale.value}`)
+}
 
+// 监听窗口大小变化
+const handleResize = () => {
+  calcuateScale()
+}
 
+onMounted(() => {
+  calcuateScale()
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <style scoped>

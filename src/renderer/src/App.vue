@@ -36,7 +36,7 @@ const switchView = (view: string) => {
 
 <template>
   <SidebarProvider>
-    <AppSidebar @view-change="switchView" :current-view="currentView" />
+    <AppSidebar :current-view="currentView" @view-change="switchView" />
     <SidebarInset>
       <!-- 银行监控告警系统主仪表盘 -->
       <Dashboard v-if="currentView === 'dashboard'" />
