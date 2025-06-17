@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SidebarProps } from '@/components/ui/sidebar'
-
+// 侧边栏使用
 import {
   Activity,
   AlertTriangle,
@@ -14,7 +14,16 @@ import {
   Settings2,
   Shield,
   TrendingUp,
-  Zap
+  Zap,
+  Home,
+  Building2,
+  Eye,
+  ShieldCheck,
+  Gauge,
+  TrendingUpDown,
+  Bell,
+  BarChart4,
+  Cpu
 } from 'lucide-vue-next'
 import NavMain from '@/components/NavMain.vue'
 import NavProjects from '@/components/NavProjects.vue'
@@ -25,63 +34,89 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail
 } from '@/components/ui/sidebar'
 
-const props = withDefaults(defineProps<SidebarProps>(), {
-  collapsible: 'icon'
+/**
+ * 组件属性定义
+ */
+interface AppSidebarProps extends SidebarProps {
+  currentView?: string
+}
+
+/**
+ * 组件事件定义
+ */
+interface Emits {
+  (e: 'view-change', view: string): void
+}
+
+const props = withDefaults(defineProps<AppSidebarProps>(), {
+  collapsible: 'icon',
+  currentView: 'dashboard'
 })
+
+const emit = defineEmits<Emits>()
+
+/**
+ * 处理主视图切换
+ */
+const handleMainViewChange = (view: string) => {
+  console.log('侧边栏切换视图:', view)
+  emit('view-change', view)
+}
 
 // 银行监控告警系统数据
 const data = {
   user: {
-    name: 'Hyphen',
+    name: '系统管理员',
     email: 'admin@bankmonitor.com',
-    avatar: '/avatars/user.jpg'
+    avatar: '/avatars/admin.jpg'
   },
   teams: [
     {
-      name: '监控中心',
-      logo: Monitor,
+      name: '银行监控中心',
+      logo: Building2,
       plan: 'Enterprise'
     },
     {
-      name: '风控部门',
-      logo: Shield,
+      name: '实时监控系统',
+      logo: Eye,
       plan: 'Professional'
     },
     {
-      name: '运维团队',
-      logo: Server,
+      name: '安全防护中心',
+      logo: ShieldCheck,
       plan: 'Standard'
+    }
+  ],
+  // 主视图导航
+  mainViews: [
+    {
+      id: 'dashboard',
+      title: '监控仪表盘',
+      icon: Gauge,
+      description: '银行系统监控概览'
+    },
+    {
+      id: 'data-visualization',
+      title: '数据可视化',
+      icon: TrendingUpDown,
+      description: '业务数据分析中心'
     }
   ],
   navMain: [
     {
-      title: '仪表盘',
-      url: '#',
-      icon: BarChart3,
-      isActive: true,
-      items: [
-        {
-          title: '监控概览',
-          url: '#'
-        },
-        {
-          title: '关键指标',
-          url: '#'
-        },
-        {
-          title: '实时数据',
-          url: '#'
-        }
-      ]
-    },
-    {
       title: '告警监控',
       url: '#',
-      icon: Monitor,
+      icon: Bell,
       items: [
         {
           title: '实时告警大屏',
@@ -97,29 +132,6 @@ const data = {
         },
         {
           title: '业务风险监控',
-          url: '#'
-        }
-      ]
-    },
-    {
-      title: '数据可视化',
-      url: '#',
-      icon: BarChart3,
-      items: [
-        {
-          title: '交易趋势分析',
-          url: '#'
-        },
-        {
-          title: '风险指标图表',
-          url: '#'
-        },
-        {
-          title: '业务数据报表',
-          url: '#'
-        },
-        {
-          title: '实时数据流',
           url: '#'
         }
       ]
@@ -150,7 +162,7 @@ const data = {
     {
       title: '系统监控',
       url: '#',
-      icon: Activity,
+      icon: Cpu,
       items: [
         {
           title: '系统性能',
@@ -220,6 +232,26 @@ const data = {
       <TeamSwitcher :teams="data.teams" />
     </SidebarHeader>
     <SidebarContent>
+      <!-- 主视图切换 -->
+      <SidebarGroup>
+        <SidebarGroupLabel>主要功能</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem v-for="view in data.mainViews" :key="view.id">
+              <SidebarMenuButton
+                :is-active="props.currentView === view.id"
+                class="hover:bg-primary/10 transition-colors duration-200"
+                @click="handleMainViewChange(view.id)"
+              >
+                <component :is="view.icon" class="w-4 h-4" />
+                <span class="font-medium">{{ view.title }}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+
+      <!-- 原有导航 -->
       <NavMain :items="data.navMain" />
       <NavProjects :projects="data.projects" />
     </SidebarContent>

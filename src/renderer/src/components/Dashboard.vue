@@ -18,7 +18,6 @@
                   : 'destructive'
             "
             class="hover:scale-105 transition-transform cursor-pointer"
-            @click="handleStatusClick"
           >
             <Activity class="w-3 h-3 mr-1" />
             {{ systemStatusText }}
@@ -41,7 +40,6 @@
             variant="outline"
             size="sm"
             class="hover:scale-105 transition-all duration-300 hover:shadow-md"
-            @click="handleSettingsClick"
           >
             <Settings class="w-3 h-3 mr-1" />
             设置
@@ -51,15 +49,15 @@
     </div>
 
     <!-- 主要内容区域 -->
-    <div class="flex-1 p-4 space-y-4 overflow-auto">
-      <!-- 关键指标卡片 -->
-      <div class="grid grid-cols-4 gap-4">
-        <Card
-          v-for="metric in keyMetrics"
-          :key="metric.id"
-          class="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-primary/50 group hover:bg-primary/5"
-          @click="handleMetricClick(metric)"
-        >
+    <div class="flex-1 p-4 h-full overflow-hidden">
+      <div class="h-full grid grid-rows-[auto_auto_1fr] gap-4">
+        <!-- 关键指标卡片 -->
+        <div class="grid grid-cols-4 gap-4">
+          <Card
+            v-for="metric in keyMetrics"
+            :key="metric.id"
+            class="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-primary/50 group hover:bg-primary/5"
+          >
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle class="text-sm font-medium group-hover:text-primary transition-colors">
               {{ metric.title }}
@@ -91,13 +89,13 @@
               <span class="ml-1">较昨日</span>
             </div>
           </CardContent>
-        </Card>
-      </div>
+          </Card>
+        </div>
 
-      <!-- 实时告警区域 -->
-      <div class="grid grid-cols-3 gap-4">
-        <!-- 告警列表 -->
-        <div class="col-span-1">
+        <!-- 实时告警区域 -->
+        <div class="grid grid-cols-3 gap-4">
+          <!-- 告警列表 -->
+          <div class="col-span-1">
           <Card
             class="hover:shadow-md transition-all duration-300 hover:border-primary/30"
             style="height: 300px"
@@ -123,7 +121,6 @@
                   :key="alert.id"
                   class="p-3 rounded-lg border hover:bg-muted/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-sm"
                   style="height: 88px"
-                  @click="handleAlertClick(alert)"
                 >
                   <div class="flex items-start justify-between h-full">
                     <div class="flex items-start space-x-3 flex-1 min-w-0">
@@ -156,7 +153,6 @@
                   :key="`copy-${alert.id}`"
                   class="p-3 rounded-lg border hover:bg-muted/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-sm"
                   style="height: 88px"
-                  @click="handleAlertClick(alert)"
                 >
                   <div class="flex items-start justify-between h-full">
                     <div class="flex items-start space-x-3 flex-1 min-w-0">
@@ -185,7 +181,7 @@
               </div>
             </CardContent>
           </Card>
-        </div>
+          </div>
 
         <!-- 告警统计和系统状态 -->
         <div class="space-y-4">
@@ -211,8 +207,7 @@
                   v-for="region in regionStats"
                   :key="region.name"
                   class="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  style="height: 48px;"
-                  @click="handleRegionStatClick(region)"
+                  style="height: 48px"
                 >
                   <div class="flex items-center">
                     <div :class="['w-3 h-3 rounded-full mr-3', region.color]"></div>
@@ -231,8 +226,7 @@
                   v-for="region in regionStats"
                   :key="`copy-${region.name}`"
                   class="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  style="height: 48px;"
-                  @click="handleRegionStatClick(region)"
+                  style="height: 48px"
                 >
                   <div class="flex items-center">
                     <div :class="['w-3 h-3 rounded-full mr-3', region.color]"></div>
@@ -281,22 +275,23 @@
         </div>
       </div>
 
-      <!-- 监控数据表格 -->
-      <Card class="hover:shadow-md transition-shadow duration-300">
+        <!-- 监控数据表格 -->
+        <Card class="hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
         <CardHeader>
           <CardTitle class="flex items-center justify-between">
             <div class="flex items-center">
               <Database class="w-5 h-5 mr-2" />
               交易监控数据
             </div>
-            <Button variant="outline" size="sm" @click="refreshTransactionData">
+            <Button variant="outline" size="sm">
               <RefreshCw class="w-4 h-4 mr-2" />
               刷新
             </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
+        <CardContent class="flex-1 overflow-hidden">
+          <div class="h-full overflow-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>交易ID</TableHead>
@@ -314,7 +309,6 @@
                 v-for="transaction in transactionData"
                 :key="transaction.id"
                 class="hover:bg-muted/50 transition-colors cursor-pointer"
-                @click="handleTransactionClick(transaction)"
               >
                 <TableCell class="font-mono text-primary">{{ transaction.id }}</TableCell>
                 <TableCell class="font-medium">{{ transaction.account }}</TableCell>
@@ -340,20 +334,17 @@
                   formatTime(transaction.timestamp)
                 }}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="hover:scale-105 transition-transform"
-                    @click.stop="handleTransactionAction(transaction)"
-                  >
+                  <Button variant="ghost" size="sm" class="hover:scale-105 transition-transform">
                     查看详情
                   </Button>
                 </TableCell>
               </TableRow>
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   </div>
 </template>
@@ -432,7 +423,7 @@ const isRefreshing = ref(false)
  */
 const currentAlertIndex = ref(0)
 const alertContainer = ref<HTMLElement | null>(null)
-let alertScrollInterval: NodeJS.Timeout
+let alertScrollInterval: NodeJS.Timeout | null = null
 
 /**
  * 地域分布自动滚动管理
@@ -440,7 +431,7 @@ let alertScrollInterval: NodeJS.Timeout
 const regionScrollOffset = ref(0)
 const isRegionScrolling = ref(false)
 const regionContainer = ref<HTMLElement | null>(null)
-let regionScrollInterval: NodeJS.Timeout
+let regionScrollInterval: NodeJS.Timeout | null = null
 
 const systemStatusText = computed(() => {
   const statusMap = {
@@ -659,32 +650,6 @@ const systemStatusList = ref([
 ])
 
 /**
- * 快速操作数据
- */
-const quickActions = ref([
-  {
-    id: 'export-report',
-    label: '导出报告',
-    icon: RefreshCw
-  },
-  {
-    id: 'alert-settings',
-    label: '告警设置',
-    icon: Settings
-  },
-  {
-    id: 'system-logs',
-    label: '系统日志',
-    icon: Database
-  },
-  {
-    id: 'backup-data',
-    label: '数据备份',
-    icon: Shield
-  }
-])
-
-/**
  * 工具函数
  */
 
@@ -876,8 +841,8 @@ const getSystemStatus = async () => {
       ]
 
       // 更新整体系统状态
-      const hasError = systemStatusList.value.some(item => item.status === 'critical')
-      const hasWarning = systemStatusList.value.some(item => item.status === 'warning')
+      const hasError = systemStatusList.value.some((item) => item.status === 'critical')
+      const hasWarning = systemStatusList.value.some((item) => item.status === 'warning')
 
       if (hasError) {
         systemStatus.value = 'critical'
@@ -897,7 +862,7 @@ const getSystemStatus = async () => {
     console.error('获取系统状态失败:', error)
     console.error('错误详情:', error.message)
     // 如果获取失败，显示错误状态
-    systemStatusList.value.forEach(item => {
+    systemStatusList.value.forEach((item) => {
       item.value = '获取失败'
       item.status = 'critical'
       item.color = 'bg-red-500'
@@ -925,78 +890,6 @@ const refreshData = async () => {
   } finally {
     isRefreshing.value = false
   }
-}
-
-/**
- * 处理指标卡片点击
- */
-const handleMetricClick = (metric: KeyMetric) => {
-  console.log('点击指标卡片:', metric.title)
-  // TODO: 跳转到详细页面或显示详细信息
-}
-
-/**
- * 处理地域统计点击
- */
-const handleRegionStatClick = (region: any) => {
-  console.log('点击地域统计:', region.name)
-  // TODO: 跳转到对应地域的详细数据
-}
-
-/**
- * 处理快速操作点击
- */
-const handleQuickAction = (action: any) => {
-  console.log('执行快速操作:', action.label)
-  // TODO: 执行对应的操作
-}
-
-/**
- * 处理交易数据点击
- */
-const handleTransactionClick = (transaction: TransactionItem) => {
-  console.log('点击交易记录:', transaction.id)
-  // TODO: 显示交易详情
-}
-
-/**
- * 处理交易操作
- */
-const handleTransactionAction = (transaction: TransactionItem) => {
-  console.log('查看交易详情:', transaction.id)
-  // TODO: 打开交易详情弹窗
-}
-
-/**
- * 刷新交易数据
- */
-const refreshTransactionData = async () => {
-  console.log('刷新交易数据')
-  // TODO: 重新获取交易数据
-}
-
-/**
- * 处理状态点击
- */
-const handleStatusClick = () => {
-  console.log('点击系统状态')
-  // TODO: 显示系统状态详情
-}
-
-/**
- * 处理设置点击
- */
-const handleSettingsClick = () => {
-  console.log('点击设置按钮')
-  // TODO: 打开设置面板
-}
-
-/**
- * 处理告警点击
- */
-const handleAlertClick = (alert: AlertItem) => {
-  console.log('点击告警:', alert.title)
-  // TODO: 显示告警详情
 }
 
 /**
@@ -1031,6 +924,8 @@ const startAlertAutoScroll = () => {
 const stopAlertAutoScroll = () => {
   if (alertScrollInterval) {
     clearInterval(alertScrollInterval)
+    alertScrollInterval = null
+    console.log('✅ 告警自动滚动已停止')
   }
 }
 
@@ -1070,17 +965,19 @@ const stopRegionAutoScroll = () => {
   isRegionScrolling.value = false
   if (regionScrollInterval) {
     clearInterval(regionScrollInterval)
+    regionScrollInterval = null
   }
+  console.log('✅ 地域分布自动滚动已停止')
 }
 
 /**
  * 自动刷新数据
  */
-let refreshInterval: NodeJS.Timeout
+let refreshInterval: NodeJS.Timeout | null = null
 
-onMounted(async () => {
+onMounted(() => {
   // 初始化时获取系统状态
-  await getSystemStatus()
+  getSystemStatus()
 
   // 每10秒自动刷新系统状态
   refreshInterval = setInterval(() => {
@@ -1097,8 +994,13 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  console.log('🔄 Dashboard组件开始卸载，清理所有定时器...')
+
+  // 清理系统状态刷新定时器
   if (refreshInterval) {
     clearInterval(refreshInterval)
+    refreshInterval = null
+    console.log('✅ 系统状态刷新定时器已清理')
   }
 
   // 停止告警自动滚动
@@ -1106,7 +1008,19 @@ onUnmounted(() => {
 
   // 停止地域分布自动滚动
   stopRegionAutoScroll()
+
+  // 重置所有状态
+  currentAlertIndex.value = 0
+  regionScrollOffset.value = 0
+  isRegionScrolling.value = false
+  isRefreshing.value = false
+
+  console.log('✅ Dashboard组件卸载完成')
 })
+
+
+
+
 </script>
 
 <style scoped>
