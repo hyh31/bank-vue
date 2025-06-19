@@ -24,6 +24,7 @@ declare global {
     api: {
       getSystemStatus: () => Promise<SystemStatus>
       getSystemInfo: () => Promise<any>
+      fetchData(): Promise<any>
     }
     electron: any
   }

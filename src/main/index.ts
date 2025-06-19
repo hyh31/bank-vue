@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import * as si from 'systeminformation'
+import axios from 'axios'
 
 function createWindow(): void {
   // Create the browser window.
@@ -55,6 +56,15 @@ app.whenReady().then(() => {
 
   // 系统监控 IPC 处理
   setupSystemMonitoring()
+  ipcMain.handle('fetchData', async () => {
+    try {
+      const response = await axios.get(`http://localhost:9090/Bank/atm/province/yesterday`)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      throw new Error('无法获取数据')
+    }
+  })
 
   createWindow()
 

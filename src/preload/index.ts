@@ -23,7 +23,8 @@ interface SystemStatus {
 const api = {
   // 系统监控API
   getSystemStatus: (): Promise<SystemStatus> => ipcRenderer.invoke('get-system-status'),
-  getSystemInfo: () => ipcRenderer.invoke('get-system-info')
+  getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+  fetchData: () => ipcRenderer.invoke('fetchData')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -511,64 +511,53 @@ const realtimeAlerts = ref<AlertItem[]>([
 /**
  * 昨日地域分布统计数据
  */
-const regionStats = ref([
-  {
-    name: '北京',
-    count: 1234,
-    percentage: 28,
-    color: 'bg-blue-500',
-    variant: 'default' as const
-  },
-  {
-    name: '上海',
-    count: 987,
-    percentage: 22,
-    color: 'bg-green-500',
-    variant: 'default' as const
-  },
-  {
-    name: '广州',
-    count: 654,
-    percentage: 15,
-    color: 'bg-yellow-500',
-    variant: 'secondary' as const
-  },
-  {
-    name: '深圳',
-    count: 543,
-    percentage: 12,
-    color: 'bg-purple-500',
-    variant: 'default' as const
-  },
-  {
-    name: '杭州',
-    count: 432,
-    percentage: 10,
-    color: 'bg-orange-500',
-    variant: 'default' as const
-  },
-  {
-    name: '成都',
-    count: 321,
-    percentage: 7,
-    color: 'bg-pink-500',
-    variant: 'default' as const
-  },
-  {
-    name: '武汉',
-    count: 234,
-    percentage: 5,
-    color: 'bg-indigo-500',
-    variant: 'default' as const
-  },
-  {
-    name: '西安',
-    count: 156,
-    percentage: 4,
-    color: 'bg-teal-500',
-    variant: 'default' as const
+const regionStats = ref<any[]>([])
+const tailwindColors = [
+  'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500',
+  'bg-orange-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500',
+  'bg-red-500', 'bg-cyan-500', 'bg-lime-500', 'bg-amber-500'
+]
+const regionColorMap: Record<string, string> = {}
+let colorIndex = 0
+const getColorByRegin = (name: string): string => {
+  if (!regionColorMap[name]) {
+    regionColorMap[name] = tailwindColors[colorIndex % tailwindColors.length]
+    colorIndex++
   }
-])
+  return regionColorMap[name]
+}
+
+/**
+ * 获取昨日地域分布统计数据
+ */
+const fetchRegionStats = async () => {
+  try {
+    console.log('正在获取昨日地域分布统计数据...')
+    const res = await (window.api as any).fetchData()
+    console.log('昨日地域分布统计数据获取成功：', res)
+    const data = res.data
+    let list: any[] = []
+    if (Array.isArray(data)) {
+      list = data
+    } else if (Array.isArray(data?.list)) {
+      list = data.list
+    }
+    const total = list.reduce((sum, item) => sum + (item.transcationTimes || 0), 0)
+    regionStats.value = list.map((item: any) => ({
+      ...item,
+      name: item.province,
+      count: item.transcationTimes,
+      percentage: ((item.transcationTimes / total) * 100).toFixed(2),
+      color: getColorByRegin(item.province),
+      variant: 'default' as const
+    }))
+    console.log('regionStats:', regionStats.value)
+  } catch (error) {
+    const err = error as Error
+    console.error('获取昨日地域分布统计数据失败：', err)
+    console.error('请检查网络连接并重试。', err.message)
+  }
+}
 
 /**
  * 交易监控数据
@@ -972,7 +961,8 @@ const stopRegionAutoScroll = () => {
  */
 let refreshInterval: NodeJS.Timeout | null = null
 
-onMounted(() => {
+onMounted(async () => {
+
   // 初始化时获取系统状态
   getSystemStatus()
 
@@ -984,10 +974,12 @@ onMounted(() => {
   }, 10000)
 
   // 启动告警自动滚动
+  await fetchRegionStats()
   startAlertAutoScroll()
 
   // 启动地域分布自动滚动
   startRegionAutoScroll()
+  await getSystemStatus()
 })
 
 onUnmounted(() => {
