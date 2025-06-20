@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import * as si from 'systeminformation'
 import axios from 'axios'
+import mysql from 'mysql2/promise'
 
 function createWindow(): void {
   // Create the browser window.
@@ -87,6 +88,14 @@ app.on('window-all-closed', () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 
+// 连接数据库配置
+const dbConfig = {
+  host: '192.168.200.101',
+  user: 'root',
+  password: '123456',
+  database: 'offline_db1'
+}
+
 /**
  * 设置系统监控功能
  */
@@ -96,25 +105,32 @@ function setupSystemMonitoring(): void {
     console.log('主进程：收到获取系统状态请求')
     try {
       // 获取CPU信息
-      console.log('主进程：正在获取CPU信息...')
       const cpuLoad = await si.currentLoad()
-      console.log('主进程：CPU信息获取成功:', cpuLoad.currentLoad)
-
       // 获取内存信息
-      console.log('主进程：正在获取内存信息...')
       const memory = await si.mem()
-      console.log('主进程：内存信息获取成功')
+      // 获取网络信息  （获取百度ping的测试延迟）
+      const networkStats = await si.inetLatency('www.baidu.com')
 
-      // 获取网络信息
-      console.log('主进程：正在获取网络信息...')
-      const networkStats = await si.networkStats()
-      console.log('主进程：网络信息获取成功')
-
-      // 计算内存使用率
-      const memoryUsage = ((memory.used / memory.total) * 100).toFixed(1)
-
-      // 获取网络延迟（模拟，实际可以ping特定服务器）
-      const networkLatency = Math.floor(Math.random() * 50) + 10 // 10-60ms
+      // 获取数据库连接信息
+      let dbStats
+      try {
+        const connection = await mysql.createConnection(dbConfig)
+        await connection.query('SHOW DATABASES')
+        await connection.end()
+        dbStats = {
+          name: 'MySql数据库',
+          value: '已连接',
+          percentage: 100,
+          status: 'normal'
+        }
+      } catch (error) {
+        dbStats = {
+          name: 'MySql数据库',
+          value: '未连接',
+          percentage: 0,
+          status: 'critical'
+        }
+      }
 
       const result = {
         cpu: {
@@ -138,18 +154,11 @@ function setupSystemMonitoring(): void {
         },
         network: {
           name: '网络延迟',
-          value: `${networkLatency}ms`,
-          percentage: Math.max(0, 100 - networkLatency), // 延迟越低，百分比越高
-          status: networkLatency > 100 ? 'critical' : networkLatency > 50 ? 'warning' : 'normal'
+          value: `${networkStats}ms`,
+          percentage: Math.max(0, 100 - (networkStats / 200) * 100), // 延迟越低，百分比越高
+          status: networkStats > 200 ? 'critical' : networkStats > 100 ? 'warning' : 'normal'
         },
-        database: {
-          name: '数据库连接',
-          value: '正常',
-          percentage: 100,
-          status: 'normal',
-          connectionCount: Math.floor(Math.random() * 100) + 200, // 模拟连接数
-          maxConnections: 500
-        }
+        database: dbStats
       }
 
       console.log('主进程：系统状态数据准备完成:', result)

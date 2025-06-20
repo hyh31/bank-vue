@@ -294,7 +294,6 @@
             <TableHeader>
               <TableRow>
                 <TableHead>交易ID</TableHead>
-                <TableHead>账户</TableHead>
                 <TableHead>金额</TableHead>
                 <TableHead>类型</TableHead>
                 <TableHead>状态</TableHead>
@@ -310,7 +309,6 @@
                 class="hover:bg-muted/50 transition-colors cursor-pointer"
               >
                 <TableCell class="font-mono text-primary">{{ transaction.id }}</TableCell>
-                <TableCell class="font-medium">{{ transaction.account }}</TableCell>
                 <TableCell class="font-mono">{{ formatCurrency(transaction.amount) }}</TableCell>
                 <TableCell>{{ transaction.type }}</TableCell>
                 <TableCell>

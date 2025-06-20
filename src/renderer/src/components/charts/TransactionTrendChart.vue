@@ -267,7 +267,8 @@ const chartOption = computed(() => {
   const legendFontSize = getResponsiveFontSize(12)
   const axisFontSize = getResponsiveFontSize(11)
 
-  const baseOption = {
+  const baseOption: any = {
+    series: [],
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
@@ -647,9 +648,6 @@ const handleResize = () => {
     echartsRef.value.resize()
   }
 }
-
-// 响应式图表容器高度
-import { onMounted, onUnmounted, ref, computed } from 'vue'
 
 const chartContainerStyle = computed(() => {
   let baseHeight = 400

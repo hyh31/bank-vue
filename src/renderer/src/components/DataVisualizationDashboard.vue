@@ -1,13 +1,5 @@
 <template>
-  <div
-    class="flex flex-col h-full bg-background"
-    :style="{
-      transform: `scale(${scale})`,
-      transformOrigin: 'top left',
-      width: `${100 / scale}%`,
-      height: `${100 / scale}%`
-    }"
-  >
+  <div>
     <!-- 数据可视化顶部标题栏 -->
     <div class="border-b bg-card px-6 py-4 hover:bg-muted/30 transition-colors duration-300">
       <div class="flex items-center justify-between">
