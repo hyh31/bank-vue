@@ -36,7 +36,7 @@
       <!-- 图表内容 -->
       <div v-else class="h-full p-6">
         <div class="flex items-center justify-center h-full">
-          <div class="w-full max-w-md space-y-6">
+          <div class="w-full max-w-md space-y-6" style="float: left">
             <!-- 现代化饼图 -->
             <div class="relative flex items-center justify-center">
               <!-- 外层阴影 -->
@@ -383,21 +383,21 @@ let autoRefreshTimer: NodeJS.Timeout
  */
 onMounted(() => {
   console.log('风险分布图表组件已挂载')
-  
+
   // 启动自动刷新
   if (props.autoRefresh) {
     autoRefreshTimer = setInterval(() => {
       refreshData()
     }, props.refreshInterval)
   }
-  
+
   // 初始化数据
   refreshData()
 })
 
 onUnmounted(() => {
   console.log('风险分布图表组件已卸载')
-  
+
   // 清理定时器
   if (autoRefreshTimer) {
     clearInterval(autoRefreshTimer)

@@ -86,7 +86,7 @@
                 :class="['h-3 w-3 mr-1 transition-all duration-300', getTrendColor(metric.trend)]"
               />
               <span :class="getTrendColor(metric.trend)">{{ metric.change }}</span>
-              <span class="ml-1">较昨日</span>
+              <span class="ml-1">{{ metric.compareType === 'last' ? '较上次' : '较昨日' }}</span>
             </div>
           </CardContent>
         </Card>
@@ -289,55 +289,57 @@
             </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent class="overflow-y-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>交易ID</TableHead>
-                <TableHead>金额</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>风险等级</TableHead>
-                <TableHead>时间</TableHead>
-                <TableHead>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow
-                v-for="transaction in transactionData"
-                :key="transaction.id"
-                class="hover:bg-muted/50 transition-colors cursor-pointer"
-              >
-                <TableCell class="font-mono text-primary">{{ transaction.id }}</TableCell>
-                <TableCell class="font-mono">{{ formatCurrency(transaction.amount) }}</TableCell>
-                <TableCell>{{ transaction.type }}</TableCell>
-                <TableCell>
-                  <Badge
-                    :variant="getStatusVariant(transaction.status)"
-                    class="hover:scale-105 transition-transform"
-                  >
-                    {{ transaction.status }}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    :variant="getRiskVariant(transaction.riskLevel)"
-                    class="hover:scale-105 transition-transform"
-                  >
-                    {{ transaction.riskLevel }}
-                  </Badge>
-                </TableCell>
-                <TableCell class="text-muted-foreground">{{
-                  formatTime(transaction.timestamp)
-                }}</TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="sm" class="hover:scale-105 transition-transform">
-                    查看详情
-                  </Button>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+        <CardContent>
+          <div class="max-h-[140px] overflow-y-auto">
+            <Table class="relative">
+              <TableHeader class="sticky top-0 z-10 bg-white shadow-sm">
+                <TableRow>
+                  <TableHead class="bg-white">交易ID</TableHead>
+                  <TableHead class="bg-white">金额</TableHead>
+                  <TableHead class="bg-white">类型</TableHead>
+                  <TableHead class="bg-white">状态</TableHead>
+                  <TableHead class="bg-white">风险等级</TableHead>
+                  <TableHead class="bg-white">时间</TableHead>
+                  <TableHead class="bg-white">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow
+                  v-for="transaction in transactionData"
+                  :key="transaction.id"
+                  class="hover:bg-muted/50 transition-colors cursor-pointer"
+                >
+                  <TableCell class="font-mono text-primary">{{ transaction.id }}</TableCell>
+                  <TableCell class="font-mono">{{ formatCurrency(transaction.amount) }}</TableCell>
+                  <TableCell>{{ transaction.type }}</TableCell>
+                  <TableCell>
+                    <Badge
+                      :variant="getStatusVariant(transaction.status)"
+                      class="hover:scale-105 transition-transform"
+                    >
+                      {{ transaction.status }}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      :variant="getRiskVariant(transaction.riskLevel)"
+                      class="hover:scale-105 transition-transform"
+                    >
+                      {{ transaction.riskLevel }}
+                    </Badge>
+                  </TableCell>
+                  <TableCell class="text-muted-foreground">{{
+                    formatTime(transaction.timestamp)
+                  }}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" class="hover:scale-105 transition-transform">
+                      查看详情
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -387,6 +389,7 @@ interface KeyMetric {
   trend: 'up' | 'down' | 'neutral'
   icon: any
   iconColor: string
+  compareType: string
 }
 
 interface AlertItem {
@@ -399,7 +402,6 @@ interface AlertItem {
 
 interface TransactionItem {
   id: string
-  account: string
   amount: number
   type: string
   status: 'completed' | 'pending' | 'failed'
@@ -448,7 +450,8 @@ const keyMetrics = ref<KeyMetric[]>([
     change: '+23%',
     trend: 'up',
     icon: AlertTriangle,
-    iconColor: 'text-destructive'
+    iconColor: 'text-destructive',
+    compareType: 'yesterday'
   },
   {
     id: 'high-risk-transactions',
@@ -457,25 +460,28 @@ const keyMetrics = ref<KeyMetric[]>([
     change: '-12%',
     trend: 'down',
     icon: Shield,
-    iconColor: 'text-orange-500'
+    iconColor: 'text-orange-500',
+    compareType: 'yesterday'
   },
   {
     id: 'monitored-accounts',
-    title: '监控账户数',
-    value: '2,847',
+    title: '监控交易数',
+    value: '2,780',
     change: '+5%',
     trend: 'up',
     icon: Users,
-    iconColor: 'text-blue-500'
+    iconColor: 'text-blue-500',
+    compareType: 'yesterday'
   },
   {
     id: 'system-health',
     title: '系统健康度',
-    value: '98.5%',
-    change: '+0.2%',
+    value: '',
+    change: '',
     trend: 'up',
     icon: Activity,
-    iconColor: 'text-green-500'
+    iconColor: 'text-green-500',
+    compareType: 'last'
   }
 ])
 
@@ -511,9 +517,18 @@ const realtimeAlerts = ref<AlertItem[]>([
  */
 const regionStats = ref<any[]>([])
 const tailwindColors = [
-  'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500',
-  'bg-orange-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500',
-  'bg-red-500', 'bg-cyan-500', 'bg-lime-500', 'bg-amber-500'
+  'bg-blue-500',
+  'bg-green-500',
+  'bg-yellow-500',
+  'bg-purple-500',
+  'bg-orange-500',
+  'bg-pink-500',
+  'bg-indigo-500',
+  'bg-teal-500',
+  'bg-red-500',
+  'bg-cyan-500',
+  'bg-lime-500',
+  'bg-amber-500'
 ]
 const regionColorMap: Record<string, string> = {}
 let colorIndex = 0
@@ -563,7 +578,6 @@ const fetchRegionStats = async () => {
 const transactionData = ref<TransactionItem[]>([
   {
     id: 'TXN001234567',
-    account: '****1234',
     amount: 5000000,
     type: '转账',
     status: 'pending',
@@ -572,7 +586,6 @@ const transactionData = ref<TransactionItem[]>([
   },
   {
     id: 'TXN001234568',
-    account: '****5678',
     amount: 150000,
     type: '取现',
     status: 'completed',
@@ -581,7 +594,6 @@ const transactionData = ref<TransactionItem[]>([
   },
   {
     id: 'TXN001234569',
-    account: '****9012',
     amount: 25000,
     type: '存款',
     status: 'completed',
@@ -590,7 +602,6 @@ const transactionData = ref<TransactionItem[]>([
   },
   {
     id: 'TXN001234570',
-    account: '****3456',
     amount: 800000,
     type: '转账',
     status: 'failed',
@@ -632,6 +643,22 @@ const systemStatusList = ref([
     color: 'bg-gray-500'
   }
 ])
+
+/**
+ * 系统健康度监控
+ */
+// 系统健康度
+const lastHealth = ref<number | null>(null)
+// 健康度计算
+const getSystemHealth = () => {
+  const scores = systemStatusList.value.map((item) => {
+    if (item.status === 'normal') return 100
+    if (item.status === 'warning') return 70
+    if (item.status === 'critical') return 30
+    return 0
+  })
+  return Number((scores.reduce((a, b) => a + b) / scores.length).toFixed())
+}
 
 /**
  * 工具函数
@@ -836,6 +863,24 @@ const getSystemStatus = async () => {
         systemStatus.value = 'normal'
       }
 
+      // 计算健康度
+      const health = getSystemHealth()
+      let diff = 0
+      if (lastHealth.value !== null) {
+        diff = health - lastHealth.value
+      }
+      const trend = diff > 0 ? 'up' : diff < 0 ? 'down' : 'neutral'
+      const change = (diff > 0 ? '+' : diff < 0 ? '' : '+') + diff.toFixed(1) + '%'
+
+      // 更新健康度数据
+      const healthMetric = keyMetrics.value.find((m) => m.id === 'system-health')
+      if (healthMetric) {
+        healthMetric.value = health + '%'
+        healthMetric.change = lastHealth.value === null ? '+0.0%' : change
+        healthMetric.trend = trend as any
+      }
+      lastHealth.value = health
+
       console.log('系统状态更新完成:', systemData)
     } else {
       console.warn('系统监控API不可用')
@@ -855,7 +900,7 @@ const getSystemStatus = async () => {
 }
 
 /**
- * 刷新数据
+ * 刷新系统状态数据
  */
 const refreshData = async () => {
   if (isRefreshing.value) return
@@ -864,10 +909,6 @@ const refreshData = async () => {
   try {
     // 获取真实系统状态
     await getSystemStatus()
-
-    // 模拟其他数据刷新
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
     console.log('数据刷新完成')
   } catch (error) {
     console.error('刷新失败:', error)
@@ -960,20 +1001,17 @@ const stopRegionAutoScroll = () => {
 let refreshInterval: NodeJS.Timeout | null = null
 
 onMounted(async () => {
-
   // 初始化时获取系统状态
   getSystemStatus()
 
   // 每10秒自动刷新系统状态
   refreshInterval = setInterval(() => {
-    if (!isRefreshing.value) {
-      getSystemStatus()
-    }
+    getSystemStatus()
   }, 10000)
 
   // 启动告警自动滚动
-  await fetchRegionStats()
   startAlertAutoScroll()
+  await fetchRegionStats()
 
   // 启动地域分布自动滚动
   startRegionAutoScroll()

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { SidebarProps } from '@/components/ui/sidebar'
+import icon from '../assets/admin.png'
+
 // 侧边栏使用
 import {
   Activity,
@@ -76,9 +78,9 @@ const handleMainViewChange = (view: string) => {
 // 银行监控告警系统数据
 const data = {
   user: {
-    name: '系统管理员',
-    email: 'admin@bankmonitor.com',
-    avatar: '/avatars/admin.jpg'
+    name: '烨晖',
+    email: '620042827@qq.com',
+    avatar: icon
   },
   teams: [
     {
