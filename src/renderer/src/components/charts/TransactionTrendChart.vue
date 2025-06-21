@@ -650,6 +650,17 @@ const handleResize = () => {
 }
 
 const chartContainerStyle = computed(() => {
+  // 优先使用传入的chartHeight属性
+  if (props.chartHeight) {
+    return {
+      height: props.chartHeight,
+      maxHeight: '46vh',
+      overflow: 'auto',
+      minHeight: '6rem'
+    }
+  }
+
+  // 备用方案：响应式计算
   let baseHeight = 400
   if (window.innerWidth <= 640) {
     baseHeight = Math.min(window.innerHeight * 0.4, 260)

@@ -276,7 +276,7 @@
       </div>
 
       <!-- 监控数据表格 -->
-      <Card class="hover:shadow-md transition-shadow duration-300" style="height: 220px">
+      <Card class="hover:shadow-md transition-shadow duration-300" style="height: 18rem;">
         <CardHeader>
           <CardTitle class="flex items-center justify-between">
             <div class="flex items-center">
@@ -290,7 +290,7 @@
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div class="max-h-[140px] overflow-y-auto">
+          <div class="max-h-[12.5rem] overflow-y-auto">
             <Table class="relative">
               <TableHeader class="sticky top-0 z-10 bg-white shadow-sm">
                 <TableRow>

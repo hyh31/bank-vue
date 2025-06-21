@@ -74,7 +74,7 @@
     <div class="flex-1 p-6 overflow-hidden">
       <!-- 交易趋势分析模块 -->
       <div v-if="currentModule === 'transaction-trend'" class="h-full">
-        <Card class="h-full hover:shadow-lg transition-shadow duration-300 no-gap">
+        <Card class="h-full hover:shadow-lg transition-shadow duration-300 gap-0">
           <CardHeader class="pb-4">
             <div class="flex items-center justify-between">
               <div>
@@ -103,7 +103,7 @@
 
       <!-- 风险等级分布模块 -->
       <div v-else-if="currentModule === 'risk-distribution'" class="h-full">
-        <Card class="h-full hover:shadow-lg transition-shadow duration-300 no-gap">
+        <Card class="h-full hover:shadow-lg transition-shadow duration-300 gap-0">
           <CardHeader class="pb-4">
             <div class="flex items-center justify-between">
               <div>
@@ -130,7 +130,7 @@
 
       <!-- 地域分布统计模块 -->
       <div v-else-if="currentModule === 'region-distribution'" class="h-full">
-        <Card class="h-full hover:shadow-lg transition-shadow duration-300 no-gap">
+        <Card class="h-full hover:shadow-lg transition-shadow duration-300 gap-0">
           <CardHeader class="pb-4">
             <div class="flex items-center justify-between">
               <div>
@@ -146,20 +146,21 @@
             </div>
           </CardHeader>
           <CardContent class="h-full pb-6">
-            <div class="flex items-center justify-center h-full">
-              <div class="text-center">
-                <BarChart3 class="w-16 h-16 mx-auto mb-4 text-green-500" />
-                <h3 class="text-lg font-semibold mb-2">地域分布统计</h3>
-                <p class="text-muted-foreground">各地区交易量分布图表</p>
-              </div>
-            </div>
+            <!-- 使用shadcn组件集成ECharts图表 -->
+            <RegionDistributionChart
+              title=""
+              subtitle=""
+              chart-height="calc(100vh - 280px)"
+              :auto-refresh="true"
+              :refresh-interval="150000"
+            />
           </CardContent>
         </Card>
       </div>
 
       <!-- 时段分析模块 -->
       <div v-else-if="currentModule === 'time-analysis'" class="h-full">
-        <Card class="h-full hover:shadow-lg transition-shadow duration-300 no-gap">
+        <Card class="h-full hover:shadow-lg transition-shadow duration-300 gap-0">
           <CardHeader class="pb-4">
             <div class="flex items-center justify-between">
               <div>
@@ -188,7 +189,7 @@
 
       <!-- 业务类型分布模块 -->
       <div v-else-if="currentModule === 'business-type'" class="h-full">
-        <Card class="h-full hover:shadow-lg transition-shadow duration-300 no-gap">
+        <Card class="h-full hover:shadow-lg transition-shadow duration-300 gap-0">
           <CardHeader class="pb-4">
             <div class="flex items-center justify-between">
               <div>
@@ -204,20 +205,21 @@
             </div>
           </CardHeader>
           <CardContent class="h-full pb-6">
-            <div class="flex items-center justify-center h-full">
-              <div class="text-center">
-                <Target class="w-16 h-16 mx-auto mb-4 text-indigo-500" />
-                <h3 class="text-lg font-semibold mb-2">业务类型分布</h3>
-                <p class="text-muted-foreground">各类业务交易占比与趋势分析图表</p>
-              </div>
-            </div>
+            <!-- 使用shadcn组件集成ECharts图表 -->
+            <BusinessTypeChart
+              title=""
+              subtitle=""
+              chart-height="480px"
+              :auto-refresh="true"
+              :refresh-interval="120000"
+            />
           </CardContent>
         </Card>
       </div>
 
       <!-- 实时数据流模块 -->
       <div v-else-if="currentModule === 'realtime-stream'" class="h-full">
-        <Card class="h-full hover:shadow-lg transition-shadow duration-300 no-gap">
+        <Card class="h-full hover:shadow-lg transition-shadow duration-300 gap-0">
           <CardHeader class="pb-4">
             <div class="flex items-center justify-between">
               <div>
@@ -266,6 +268,8 @@ import { Button } from '@/components/ui/button'
 // 导入专门的图表组件
 import TransactionTrendChart from '@/components/charts/TransactionTrendChart.vue'
 import RiskDistributionChart from '@/components/charts/RiskDistributionChart.vue'
+import RegionDistributionChart from '@/components/charts/RegionDistributionChart.vue'
+import BusinessTypeChart from '@/components/charts/BusinessTypeChart.vue'
 
 // 导入性能监控工具
 import { performanceMonitor } from '@/utils/performance'
@@ -436,137 +440,5 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/**
- * 数据可视化大屏样式
- * 针对1920x1080和3840x2160分辨率优化
- */
 
-/* 移除Card组件的gap-6属性 */
-.no-gap {
-  gap: 0 !important;
-}
-
-/* 模块切换按钮动画 */
-.transition-all {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 卡片悬停效果 */
-.hover\:shadow-lg:hover {
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-/* 横向滚动优化 */
-.overflow-x-auto {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
-}
-
-.overflow-x-auto::-webkit-scrollbar {
-  height: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb {
-  background-color: rgba(155, 155, 155, 0.5);
-  border-radius: 20px;
-}
-
-/* 大屏显示优化 */
-@media (min-width: 1920px) {
-  /* 1920x1080 优化 */
-  .text-2xl {
-    font-size: 1.75rem;
-  }
-
-  .text-xl {
-    font-size: 1.375rem;
-  }
-}
-
-@media (min-width: 3840px) {
-  /* 4K分辨率优化 */
-  .text-2xl {
-    font-size: 2.5rem;
-  }
-
-  .text-xl {
-    font-size: 2rem;
-  }
-
-  .text-lg {
-    font-size: 1.5rem;
-  }
-
-  .text-sm {
-    font-size: 1rem;
-  }
-
-  .w-6 {
-    width: 2rem;
-  }
-
-  .h-6 {
-    height: 2rem;
-  }
-}
-
-/* 响应式设计 */
-@media (max-width: 1024px) {
-  .p-6 {
-    padding: 1rem;
-  }
-
-  .min-w-[140px] {
-    min-width: 120px;
-  }
-}
-
-@media (max-width: 768px) {
-  .flex-col {
-    flex-direction: column;
-  }
-
-  .space-x-2 > * + * {
-    margin-left: 0;
-    margin-top: 0.5rem;
-  }
-
-  .min-w-[140px] {
-    min-width: 100px;
-  }
-}
-
-/* 深色模式优化 */
-@media (prefers-color-scheme: dark) {
-  .hover\:shadow-lg:hover {
-    box-shadow:
-      0 20px 25px -5px rgba(0, 0, 0, 0.3),
-      0 10px 10px -5px rgba(0, 0, 0, 0.2);
-  }
-}
-
-/* 高对比度模式支持 */
-@media (prefers-contrast: high) {
-  .border {
-    border-width: 2px;
-  }
-}
-
-/* 减少动画模式支持 */
-@media (prefers-reduced-motion: reduce) {
-  .transition-all,
-  .hover\:scale-105 {
-    transition: none;
-  }
-
-  .hover\:scale-105:hover {
-    transform: none;
-  }
-}
 </style>

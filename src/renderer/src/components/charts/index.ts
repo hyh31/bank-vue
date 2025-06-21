@@ -11,6 +11,8 @@
 // 专门的图表组件
 export { default as TransactionTrendChart } from './TransactionTrendChart.vue'
 export { default as RiskDistributionChart } from './RiskDistributionChart.vue'
+export { default as RegionDistributionChart } from './RegionDistributionChart.vue'
+export { default as BusinessTypeChart } from './BusinessTypeChart.vue'
 export { default as RealtimeDataStream } from './RealtimeDataStream.vue'
 
 /**
