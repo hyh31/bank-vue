@@ -6,6 +6,26 @@ import * as si from 'systeminformation'
 import axios from 'axios'
 import mysql from 'mysql2/promise'
 
+// 增强的日志工具 - 使用英文避免编码问题
+const logger = {
+  info: (message: string, data?: any) => {
+    const timestamp = new Date().toLocaleString()
+    console.log(`[INFO] [${timestamp}] ${message}`, data ? JSON.stringify(data, null, 2) : '')
+  },
+  success: (message: string, data?: any) => {
+    const timestamp = new Date().toLocaleString()
+    console.log(`[SUCCESS] [${timestamp}] ${message}`, data ? JSON.stringify(data, null, 2) : '')
+  },
+  error: (message: string, error?: any) => {
+    const timestamp = new Date().toLocaleString()
+    console.error(`[ERROR] [${timestamp}] ${message}`, error || '')
+  },
+  warn: (message: string, data?: any) => {
+    const timestamp = new Date().toLocaleString()
+    console.warn(`[WARN] [${timestamp}] ${message}`, data || '')
+  }
+}
+
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -57,6 +77,8 @@ app.whenReady().then(() => {
 
   // 系统监控 IPC 处理
   setupSystemMonitoring()
+
+  // 保留原有的仪表盘地域接口
   ipcMain.handle('fetchData', async () => {
     try {
       const response = await axios.get(`http://localhost:9090/Bank/atm/province/yesterday`)
@@ -66,6 +88,9 @@ app.whenReady().then(() => {
       throw new Error('无法获取数据')
     }
   })
+
+  // 数据获取 IPC 处理
+  setupDataFetching()
 
   createWindow()
 
@@ -203,6 +228,51 @@ function setupSystemMonitoring(): void {
     } catch (error) {
       console.error('获取系统信息失败:', error)
       return null
+    }
+  })
+}
+
+/**
+ * 设置数据获取功能
+ */
+function setupDataFetching(): void {
+  // 后端API基础URL
+  const API_BASE_URL = 'http://localhost:9090'
+
+  // 获取地域分布数据
+  ipcMain.handle('fetch-region-data', async (_, params) => {
+    const { dataType = 'transaction' } = params || {}
+    try {
+      // 根据数据类型选择不同的API端点
+      let endpoint = ''
+      switch (dataType) {
+        // 地域分布--交易数量
+        case 'transaction':
+        // 地域分布--交易金额
+        case 'amount':
+          endpoint = '/Bank/atm/province/yesterday'
+          break
+        // 地域分布--风险指数
+        case 'risk':
+          endpoint = '/Bank/atm/province/risk/yesterday'
+          break
+        default:
+          endpoint = '/Bank/atm/province/yesterday'
+      }
+      const response = await axios.get(`${API_BASE_URL}${endpoint}`)
+      return {
+        success: true,
+        data: response.data.data || response.data,
+        message: '数据获取成功',
+        timestamp: new Date().toISOString()
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        data: [],
+        message: error.message || '数据获取失败',
+        error: error.response?.data || error.message
+      }
     }
   })
 }

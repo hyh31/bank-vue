@@ -19,12 +19,30 @@ interface SystemStatus {
   database: SystemComponent
 }
 
+// 数据获取参数接口
+interface DataFetchParams {
+  dataType?: 'transaction' | 'amount' | 'risk'
+}
+
+// API响应接口
+interface ApiResponse<T = any> {
+  success: boolean
+  data: T
+  message: string
+  timestamp?: string
+  error?: any
+}
+
 // Custom APIs for renderer
 const api = {
   // 系统监控API
   getSystemStatus: (): Promise<SystemStatus> => ipcRenderer.invoke('get-system-status'),
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
-  fetchData: () => ipcRenderer.invoke('fetchData')
+
+  // 数据获取API
+  fetchData: () => ipcRenderer.invoke('fetchData'),
+  fetchRegionData: (params?: DataFetchParams): Promise<ApiResponse> =>
+    ipcRenderer.invoke('fetch-region-data', params)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

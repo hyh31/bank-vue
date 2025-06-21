@@ -403,7 +403,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   title: '业务类型分布统计',
   subtitle: 'ATM与外汇业务数据分析',
-  chartHeight: '400px',
+  chartHeight: "calculate(100vh - 400px)",
   autoRefresh: true,
   refreshInterval: 30000
 })

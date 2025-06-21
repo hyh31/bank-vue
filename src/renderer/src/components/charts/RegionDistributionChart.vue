@@ -1,4 +1,5 @@
 <template>
+  <!-- 地域分布统计 -->
   <div class="w-full h-full">
     <!-- 图表标题和控制器 -->
     <div class="flex items-center justify-between mb-4">
@@ -11,7 +12,6 @@
         <select
           v-model="displayMode"
           class="px-3 py-1.5 text-xs border rounded-md bg-background hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
-          @change="handleDisplayModeChange"
         >
           <option value="chart">图表模式</option>
           <option value="mixed">混合模式</option>
@@ -22,7 +22,6 @@
         <select
           v-model="dataType"
           class="px-3 py-1.5 text-xs border rounded-md bg-background hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
-          @change="handleDataTypeChange"
         >
           <option value="transaction">交易数量</option>
           <option value="amount">交易金额</option>
@@ -69,8 +68,7 @@
             <div
               v-for="(region, index) in sortedRegionData"
               :key="region.name"
-              class="flex items-center justify-between p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors cursor-pointer group"
-              @click="highlightRegion(region.name)"
+              class="flex items-center justify-between p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors group"
             >
               <div class="flex items-center space-x-3">
                 <div
@@ -115,8 +113,7 @@
           <div
             v-for="(region, index) in sortedRegionData"
             :key="region.name"
-            class="bg-background rounded-lg p-4 border hover:shadow-lg transition-all duration-300 cursor-pointer group hover:scale-105"
-            @click="highlightRegion(region.name)"
+            class="bg-background rounded-lg p-4 border hover:shadow-lg transition-all duration-300 group hover:scale-105"
           >
             <div class="flex items-center justify-between mb-3">
               <div
@@ -252,8 +249,7 @@ import {
   TooltipComponent,
   LegendComponent,
   GridComponent,
-  VisualMapComponent,
-  GeoComponent
+  VisualMapComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 
@@ -269,11 +265,6 @@ use([
   VisualMapComponent
 ])
 
-// 注册简化的地图数据（专注于图表展示）
-const setupChartComponents = () => {
-  console.log('地域分布图表组件初始化完成')
-}
-
 /**
  * 组件属性定义
  */
@@ -288,7 +279,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   title: '地域分布统计',
   subtitle: '各省份交易数据分析',
-  chartHeight: '400px',
+  chartHeight: '25rem',
   autoRefresh: true,
   refreshInterval: 30000
 })
@@ -302,6 +293,7 @@ const isLoading = ref(false)
 const chartContainer = ref<HTMLElement | null>(null)
 const pieChartRef = ref<InstanceType<typeof VChart> | null>(null)
 const barChartRef = ref<InstanceType<typeof VChart> | null>(null)
+const highlightedRegion = ref<string | null>(null)
 
 // 地域数据接口
 interface RegionData {
@@ -315,28 +307,27 @@ interface RegionData {
 // 从后端获取省份数据
 const fetchRegionDataFromBackend = async (): Promise<RegionData[]> => {
   try {
-    console.log('正在从后端获取地域分布数据...')
+    console.log('正在从后端获取地域分布数据...', { dataType: dataType.value })
+    // 使用新的IPC方法获取地域分布数据
+    const response = await (window.api as any).fetchRegionData({ dataType: dataType.value })
+    console.log('后端返回的数据:', response)
 
-    // 调用主进程的 fetchData 方法获取后端数据
-    const backendData = await window.electron.ipcRenderer.invoke('fetchData')
-    console.log('后端返回的数据:', backendData)
-
-    if (backendData && backendData.data && Array.isArray(backendData.data)) {
+    if (response.success && response.data && Array.isArray(response.data)) {
       const data: RegionData[] = []
       let totalValue = 0
 
       // 处理后端数据
-      backendData.data.forEach((item: any) => {
+      response.data.forEach((item: any) => {
         const value = dataType.value === 'transaction'
-          ? item.transaction_count || 0
+          ? item.transcationTimes
           : dataType.value === 'amount'
-          ? item.total_amount || 0
+          ? item.sumAmount || 0
           : item.risk_score || 0
 
         totalValue += value
 
         data.push({
-          name: item.province || item.region || '未知',
+          name: item.province || '未知',
           value,
           percentage: 0, // 稍后计算
           trend: item.trend || (Math.random() > 0.6 ? 'up' : Math.random() > 0.3 ? 'down' : 'neutral'),
@@ -351,68 +342,33 @@ const fetchRegionDataFromBackend = async (): Promise<RegionData[]> => {
 
       console.log('处理后的地域数据:', data)
       return data.sort((a, b) => b.value - a.value)
+    } else {
+      console.warn('后端返回数据格式不正确:', response)
+      return []
     }
   } catch (error) {
-    console.warn('获取后端数据失败，使用模拟数据:', error)
+    console.error('获取后端数据失败:', error)
+    return []
   }
-
-  // 备用方案：生成模拟数据
-  return generateMockRegionData()
 }
 
-// 模拟省份数据（备用方案）
-const generateMockRegionData = (): RegionData[] => {
-  const provinces = [
-    '北京', '上海', '广东', '江苏', '浙江', '山东', '河南', '四川',
-    '湖北', '湖南', '河北', '福建', '安徽', '陕西', '辽宁', '重庆',
-    '江西', '云南', '广西', '山西', '吉林', '贵州', '新疆', '甘肃',
-    '内蒙古', '黑龙江', '天津', '海南', '宁夏', '青海', '西藏'
-  ]
 
-  const data: RegionData[] = []
-  let totalValue = 0
-
-  // 生成基础数据
-  provinces.forEach((province, index) => {
-    const baseValue = dataType.value === 'transaction'
-      ? Math.floor(Math.random() * 5000) + 500
-      : dataType.value === 'amount'
-      ? Math.floor(Math.random() * 50000000) + 5000000
-      : Math.floor(Math.random() * 100) + 10
-
-    // 一线城市数据更高
-    const multiplier = ['北京', '上海', '广东', '江苏', '浙江'].includes(province)
-      ? 1.5 + Math.random() * 0.5
-      : 1
-
-    const value = Math.floor(baseValue * multiplier)
-    totalValue += value
-
-    data.push({
-      name: province,
-      value,
-      percentage: 0, // 稍后计算
-      trend: Math.random() > 0.6 ? 'up' : Math.random() > 0.3 ? 'down' : 'neutral',
-      riskLevel: Math.random() > 0.7 ? 'high' : Math.random() > 0.4 ? 'medium' : 'low'
-    })
-  })
-
-  // 计算百分比
-  data.forEach(item => {
-    item.percentage = Number(((item.value / totalValue) * 100).toFixed(1))
-  })
-
-  return data.sort((a, b) => b.value - a.value)
-}
 
 const regionData = ref<RegionData[]>([])
 
 /**
  * 计算属性
  */
-const chartContainerStyle = computed(() => ({
-  height: props.chartHeight
-}))
+const chartContainerStyle = computed(() => {
+  console.log('🔍 chartContainerStyle 计算:', {
+    'props.chartHeight': props.chartHeight,
+    'typeof': typeof props.chartHeight
+  })
+
+  return {
+    height: props.chartHeight
+  }
+})
 
 const sortedRegionData = computed(() => {
   return [...regionData.value].sort((a, b) => b.value - a.value)
@@ -460,18 +416,24 @@ const getRegionColor = (value: number) => {
   const max = Math.max(...regionData.value.map(item => item.value))
   const ratio = value / max
 
-  if (ratio > 0.8) return '#ef4444'      // 红色 - 最高
-  if (ratio > 0.6) return '#f97316'      // 橙色 - 高
-  if (ratio > 0.4) return '#eab308'      // 黄色 - 中等
-  if (ratio > 0.2) return '#22c55e'      // 绿色 - 较低
+  if (ratio > 0.9) return '#ef4444'      // 红色 - 最高
+  if (ratio > 0.8) return '#f97316'      // 橙色 - 高
+  if (ratio > 0.6) return '#eab308'      // 黄色 - 中等
+  if (ratio > 0.4) return '#22c55e'      // 绿色 - 较低
   return '#6b7280'                       // 灰色 - 最低
 }
 
 /**
- * 现代化饼图配置选项（替代地图）
+ * 现代化饼图配置 - 增强交互性
  */
 const pieChartOption = computed(() => {
-  const topRegions = sortedRegionData.value.slice(0, 10) // 显示前10个省份
+  const topRegions = sortedRegionData.value.slice(0, 8) // 减少到8个，避免过于拥挤
+  // 定义一个漂亮的颜色数组
+  const pieColors = [
+    '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', 
+    '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc', '#ff9f7f',
+    '#87ceeb', '#32cd32', '#ffa500', '#ff69b4', '#20b2aa'
+  ]
 
   return {
     backgroundColor: 'transparent',
@@ -482,64 +444,93 @@ const pieChartOption = computed(() => {
       borderWidth: 1,
       textStyle: {
         color: '#374151',
-        fontSize: 12
+        fontSize: 13
       },
       formatter: (params: any) => {
+        const regionInfo = regionData.value.find(item => item.name === params.name)
+        const rank = sortedRegionData.value.findIndex(item => item.name === params.name) + 1
         return `
-          <div style="font-weight: 600; margin-bottom: 4px;">${params.name}</div>
-          <div>${getDataTypeLabel()}: ${formatValue(params.value)}</div>
-          <div>占比: ${params.percent}%</div>
+          <div style="font-weight: 600; margin-bottom: 6px; font-size: 14px;">${params.name}</div>
+          <div style="margin-bottom: 3px;">${getDataTypeLabel()}: <strong>${formatValue(params.value)}</strong></div>
+          <div style="margin-bottom: 3px;">占比: <strong>${params.percent}%</strong></div>
+          <div style="margin-bottom: 3px;">排名: <strong>第${rank}名</strong></div>
+          <div style="color: #6b7280; font-size: 11px;">趋势: ${regionInfo?.trend === 'up' ? '📈 上升' : regionInfo?.trend === 'down' ? '📉 下降' : '➡️ 平稳'}</div>
         `
       }
     },
     legend: {
       orient: 'vertical',
-      left: 'left',
+      left: '5%',
       top: 'center',
       textStyle: {
-        color: '#6b7280',
-        fontSize: 11
+        color: '#374151',
+        fontSize: 12
       },
-      itemWidth: 12,
-      itemHeight: 8
+      itemWidth: 14,
+      itemHeight: 10,
+      itemGap: 8,
+      formatter: (name: string) => {
+        const region = regionData.value.find(item => item.name === name)
+        return `${name} (占全中国比：${region?.percentage}%)`
+      }
     },
     series: [
       {
         name: getDataTypeLabel(),
         type: 'pie',
-        radius: ['40%', '70%'],
+        radius: ['45%', '75%'],
         center: ['65%', '50%'],
         avoidLabelOverlap: false,
         itemStyle: {
-          borderRadius: 8,
+          borderRadius: 6,
           borderColor: '#fff',
           borderWidth: 2
         },
         label: {
-          show: false,
-          position: 'center'
+          show: true,
+          position: 'outside',
+          fontSize: 11,
+          color: '#374151',
+          formatter: (params: any) => {
+            return `${params.name}\n${params.percent}%`
+          }
         },
         emphasis: {
           label: {
             show: true,
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: 'bold',
-            color: '#374151'
+            color: '#1f2937'
           },
           itemStyle: {
-            shadowBlur: 10,
+            shadowBlur: 15,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
+            shadowColor: 'rgba(0, 0, 0, 0.3)',
+            scale: true,
+            scaleSize: 5
           }
         },
         labelLine: {
-          show: false
+          show: true,
+          length: 15,
+          length2: 10,
+          lineStyle: {
+            color: '#9ca3af',
+            width: 1
+          }
         },
         data: topRegions.map((item, index) => ({
           value: item.value,
           name: item.name,
           itemStyle: {
-            color: getRegionColor(item.value)
+            color: pieColors[index % pieColors.length],
+            opacity: highlightedRegion.value && highlightedRegion.value !== item.name ? 0.3 : 1
+          },
+          emphasis: {
+            itemStyle: {
+              color: getRegionColor(item.value),
+              opacity: 1
+            }
           }
         }))
       }
@@ -578,7 +569,7 @@ const barChartOption = computed(() => {
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '15%',
+      bottom: '2%',
       top: '10%',
       containLabel: true
     },
@@ -636,7 +627,7 @@ const barChartOption = computed(() => {
       {
         name: getDataTypeLabel(),
         type: 'bar',
-        data: topRegions.map((item, index) => ({
+        data: topRegions.map((item) => ({
           value: item.value,
           itemStyle: {
             color: {
@@ -686,15 +677,6 @@ const barChartOption = computed(() => {
 /**
  * 事件处理函数
  */
-const handleDisplayModeChange = () => {
-  console.log('显示模式切换为:', displayMode.value)
-}
-
-const handleDataTypeChange = () => {
-  console.log('数据类型切换为:', dataType.value)
-  refreshData()
-}
-
 const refreshData = async () => {
   if (isLoading.value) return
 
@@ -707,8 +689,8 @@ const refreshData = async () => {
     console.log('地域分布数据刷新完成')
   } catch (error) {
     console.error('数据刷新失败:', error)
-    // 失败时使用模拟数据
-    regionData.value = generateMockRegionData()
+    // 失败时设置为空数组
+    regionData.value = []
   } finally {
     isLoading.value = false
   }
@@ -726,13 +708,18 @@ const handleMapClick = (params: any) => {
 }
 
 const handleChartClick = (params: any) => {
-  console.log('点击柱状图:', params.name)
+  console.log('点击图表:', params.name)
+  toggleHighlight(params.name)
   handleMapClick(params)
 }
 
-const highlightRegion = (regionName: string) => {
-  console.log('高亮省份:', regionName)
-  // 可以在地图上高亮显示选中的省份
+// 高亮切换函数
+const toggleHighlight = (regionName: string) => {
+  if (highlightedRegion.value === regionName) {
+    highlightedRegion.value = null
+  } else {
+    highlightedRegion.value = regionName
+  }
 }
 
 /**

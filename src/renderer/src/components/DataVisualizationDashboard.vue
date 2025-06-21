@@ -120,7 +120,6 @@
             <RiskDistributionChart
               title=""
               subtitle=""
-              chart-height="calc(100vh - 280px)"
               :auto-refresh="true"
               :refresh-interval="150000"
             />
@@ -145,12 +144,12 @@
               </Badge>
             </div>
           </CardHeader>
-          <CardContent class="h-full pb-6">
+          <CardContent class="h-full">
             <!-- 使用shadcn组件集成ECharts图表 -->
             <RegionDistributionChart
               title=""
               subtitle=""
-              chart-height="calc(100vh - 280px)"
+              chart-height="calc(100vh - 443px)"
               :auto-refresh="true"
               :refresh-interval="150000"
             />
@@ -233,13 +232,13 @@
             </div>
           </CardHeader>
           <CardContent class="h-full pb-6">
-            <div class="flex items-center justify-center h-full">
-              <div class="text-center">
-                <Activity class="w-16 h-16 mx-auto mb-4 text-red-500" />
-                <h3 class="text-lg font-semibold mb-2">实时数据流监控</h3>
-                <p class="text-muted-foreground">系统性能与交易数据实时监控图表</p>
-              </div>
-            </div>
+            <!-- 使用RealtimeDataStream组件 -->
+            <RealtimeDataStream
+              title=""
+              subtitle=""
+              chart-height="500px"
+              :max-data-points="50"
+            />
           </CardContent>
         </Card>
       </div>
@@ -270,6 +269,7 @@ import TransactionTrendChart from '@/components/charts/TransactionTrendChart.vue
 import RiskDistributionChart from '@/components/charts/RiskDistributionChart.vue'
 import RegionDistributionChart from '@/components/charts/RegionDistributionChart.vue'
 import BusinessTypeChart from '@/components/charts/BusinessTypeChart.vue'
+import RealtimeDataStream from '@/components/charts/RealtimeDataStream.vue'
 
 // 导入性能监控工具
 import { performanceMonitor } from '@/utils/performance'
