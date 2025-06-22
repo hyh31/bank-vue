@@ -287,7 +287,7 @@ const props = withDefaults(defineProps<Props>(), {
 /**
  * 响应式数据
  */
-const displayMode = ref<'chart' | 'mixed' | 'grid'>('mixed')
+const displayMode = ref<'chart' | 'mixed' | 'grid'>('mixed')    // 这个是不是可以写再index.ts上 待确定
 const dataType = ref<'transaction' | 'amount' | 'risk'>('transaction')
 const isLoading = ref(false)
 const chartContainer = ref<HTMLElement | null>(null)
@@ -413,14 +413,27 @@ const formatValue = (value: number) => {
 }
 
 const getRegionColor = (value: number) => {
-  const max = Math.max(...regionData.value.map(item => item.value))
-  const ratio = value / max
+  // 按排名分配颜色
+  const sortedValues = [...regionData.value].sort((a, b) => b.value - a.value)   // 排序
+  const rank = sortedValues.findIndex(item => item.value === value) + 1      // 计算排名
+  const totalCount = regionData.value.length   // 计算省份数总数
+  const percentile = rank / totalCount   // 计算占的百分比
 
-  if (ratio > 0.9) return '#ef4444'      // 红色 - 最高
-  if (ratio > 0.8) return '#f97316'      // 橙色 - 高
-  if (ratio > 0.6) return '#eab308'      // 黄色 - 中等
-  if (ratio > 0.4) return '#22c55e'      // 绿色 - 较低
-  return '#6b7280'                       // 灰色 - 最低
+  // 详细调试信息
+  console.log(`Value: ${value}, Rank: ${rank}, Total: ${totalCount}, Percentile: ${percentile.toFixed(3)}`)
+
+  let color = '#6b7280' // 默认灰色
+  if (percentile <= 0.1) {
+    color = '#ef4444'  // 红色 - 前10%
+  } else if (percentile <= 0.2) {
+    color = '#f97316'  // 橙色 - 前20%
+  } else if (percentile <= 0.4) {
+    color = '#eab308'  // 黄色 - 前40%
+    console.log(`  -> 黄色 (前40%)`)
+  } else if (percentile <= 0.7) {
+    color = '#22c55e'  // 绿色 - 前70%
+  }
+  return color
 }
 
 /**

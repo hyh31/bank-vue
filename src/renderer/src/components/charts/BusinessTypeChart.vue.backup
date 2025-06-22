@@ -1,0 +1,2359 @@
+<template>
+  <!-- 业务类型分布统计 -->
+  <div class="w-full h-full">
+    <!-- 图表标题和控制器 -->
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-lg font-semibold">{{ title }}</h3>
+        <p class="text-sm text-muted-foreground">{{ subtitle }}</p>
+      </div>
+      <div class="flex items-center space-x-2">
+        <!-- 业务类型切换 -->
+        <select
+          v-model="selectedBusinessType"
+          class="px-3 py-1.5 text-xs border rounded-md bg-background hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
+          @change="handleBusinessTypeChange"
+        >
+          <option value="all">全部业务</option>
+          <option value="atm">ATM业务</option>
+          <option value="fx">外汇业务</option>
+        </select>
+
+        <!-- 显示模式切换 -->
+        <select
+          v-model="displayMode"
+          class="px-3 py-1.5 text-xs border rounded-md bg-background hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
+          @change="handleDisplayModeChange"
+        >
+          <option value="overview">总览模式</option>
+          <option value="detailed">详细分析</option>
+          <option value="comparison">对比分析</option>
+        </select>
+
+        <!-- 刷新按钮 -->
+        <Button variant="ghost" size="sm" :disabled="isLoading" @click="refreshData">
+          <RefreshCw :class="['w-3 h-3', isLoading ? 'animate-spin' : '']" />
+        </Button>
+      </div>
+    </div>
+
+    <!-- 图表容器 -->
+    <div
+      ref="chartContainer"
+      class="w-full chart-container bg-gradient-to-br from-slate-50/80 to-blue-50/80 dark:from-gray-900/80 dark:to-slate-800/80 rounded-xl border shadow-sm"
+      :style="chartContainerStyle"
+    >
+      <!-- 加载状态 -->
+      <div v-if="isLoading" class="flex items-center justify-center h-full">
+        <div class="flex flex-col items-center space-y-3">
+          <RefreshCw class="w-8 h-8 animate-spin text-primary" />
+          <p class="text-sm text-muted-foreground">正在加载业务数据...</p>
+        </div>
+      </div>
+
+      <!-- 🚀 现代化总览模式 -->
+      <div v-else-if="displayMode === 'overview'" class="h-full p-4 space-y-4 overflow-y-auto">
+        <!-- 🎯 顶部核心KPI指标区域 -->
+        <div class="grid grid-cols-4 gap-4">
+          <!-- 总交易量 -->
+          <div class="group overview-kpi-card bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-2xl p-6 text-white relative overflow-hidden cursor-pointer transform hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/25">
+            <!-- 背景装饰 -->
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12 group-hover:scale-125 transition-transform duration-700"></div>
+
+            <div class="relative z-10">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
+                  <Target class="w-6 h-6 text-white" />
+                </div>
+                <div class="text-xs bg-white/20 px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  总计
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-sm font-medium opacity-90">总交易量</div>
+                <div class="text-2xl font-bold data-number">{{ formatNumber(atmData.totalTransactions + fxData.total) }}</div>
+                <div class="text-xs opacity-75 flex items-center">
+                  <TrendingUp class="w-3 h-3 mr-1" />
+                  较昨日 +{{ ((atmData.trend + fxData.trend) / 2).toFixed(1) }}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 总金额 -->
+          <div class="group overview-kpi-card bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 rounded-2xl p-6 text-white relative overflow-hidden cursor-pointer transform hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/25">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12 group-hover:scale-125 transition-transform duration-700"></div>
+
+            <div class="relative z-10">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
+                  <DollarSign class="w-6 h-6 text-white" />
+                </div>
+                <div class="text-xs bg-white/20 px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  总计
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-sm font-medium opacity-90">总金额</div>
+                <div class="text-2xl font-bold data-number">{{ formatCurrency(atmData.totalAmount + fxData.sumAmount) }}</div>
+                <div class="text-xs opacity-75 flex items-center">
+                  <TrendingUp class="w-3 h-3 mr-1" />
+                  平均 {{ formatCurrency((atmData.avgAmount + fxData.avgAmount) / 2) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ATM业务占比 -->
+          <div class="group overview-kpi-card bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 rounded-2xl p-6 text-white relative overflow-hidden cursor-pointer transform hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/25">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12 group-hover:scale-125 transition-transform duration-700"></div>
+
+            <div class="relative z-10">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
+                  <CreditCard class="w-6 h-6 text-white" />
+                </div>
+                <div class="text-xs bg-white/20 px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  ATM
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-sm font-medium opacity-90">ATM业务</div>
+                <div class="text-2xl font-bold data-number">{{ atmData.percentage }}%</div>
+                <div class="text-xs opacity-75 flex items-center">
+                  <TrendingUp v-if="atmData.trend > 0" class="w-3 h-3 mr-1" />
+                  <TrendingDown v-else class="w-3 h-3 mr-1" />
+                  {{ atmData.trend > 0 ? '+' : '' }}{{ atmData.trend.toFixed(1) }}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FX业务占比 -->
+          <div class="group overview-kpi-card bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 rounded-2xl p-6 text-white relative overflow-hidden cursor-pointer transform hover:scale-105 transition-all duration-500 hover:shadow-2xl hover:shadow-orange-500/25">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12 group-hover:scale-125 transition-transform duration-700"></div>
+
+            <div class="relative z-10">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
+                  <Globe class="w-6 h-6 text-white" />
+                </div>
+                <div class="text-xs bg-white/20 px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  FX
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-sm font-medium opacity-90">外汇业务</div>
+                <div class="text-2xl font-bold data-number">{{ fxData.percentage }}%</div>
+                <div class="text-xs opacity-75 flex items-center">
+                  <TrendingUp v-if="fxData.trend > 0" class="w-3 h-3 mr-1" />
+                  <TrendingDown v-else class="w-3 h-3 mr-1" />
+                  {{ fxData.trend > 0 ? '+' : '' }}{{ fxData.trend.toFixed(1) }}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 📊 中央业务分布可视化区域 -->
+        <div class="bg-gradient-to-br from-white via-gray-50/50 to-blue-50/30 rounded-2xl p-6 border border-gray-100/60 shadow-lg">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="text-lg font-bold text-gray-800">业务分布概览</h3>
+              <p class="text-sm text-gray-600">ATM与外汇业务实时数据分析</p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span class="text-xs text-gray-600">ATM</span>
+              <div class="w-3 h-3 rounded-full bg-emerald-500 ml-4"></div>
+              <span class="text-xs text-gray-600">外汇</span>
+            </div>
+          </div>
+
+          <div class="h-80 relative">
+            <v-chart
+              ref="mainChartRef"
+              class="w-full h-full"
+              :option="modernOverviewChartOption"
+              :autoresize="true"
+              @click="handleChartClick"
+            />
+          </div>
+        </div>
+
+        <!-- 🔥 底部洞察区域 -->
+        <div class="grid grid-cols-3 gap-4">
+          <!-- 热门排行 -->
+          <div class="bg-gradient-to-br from-white via-red-50/30 to-pink-50/50 rounded-xl p-5 border border-red-100/60 shadow-md">
+            <div class="flex items-center mb-4">
+              <div class="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center mr-3">
+                <TrendingUp class="w-4 h-4 text-white" />
+              </div>
+              <h4 class="font-semibold text-gray-800">热门排行</h4>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between p-2 bg-white/60 rounded-lg">
+                <div class="flex items-center">
+                  <div class="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-xs font-bold text-white mr-2">1</div>
+                  <span class="text-sm font-medium">{{ getTopCurrency() }}</span>
+                </div>
+                <span class="text-xs text-gray-600">热门币种</span>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-white/60 rounded-lg">
+                <div class="flex items-center">
+                  <div class="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-xs font-bold text-white mr-2">2</div>
+                  <span class="text-sm font-medium">{{ getTopPurpose() }}</span>
+                </div>
+                <span class="text-xs text-gray-600">主要目的</span>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-white/60 rounded-lg">
+                <div class="flex items-center">
+                  <div class="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center text-xs font-bold text-white mr-2">3</div>
+                  <span class="text-sm font-medium">{{ getTopProvince() }}</span>
+                </div>
+                <span class="text-xs text-gray-600">活跃省份</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 趋势分析 -->
+          <div class="bg-gradient-to-br from-white via-green-50/30 to-emerald-50/50 rounded-xl p-5 border border-green-100/60 shadow-md">
+            <div class="flex items-center mb-4">
+              <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mr-3">
+                <BarChart3 class="w-4 h-4 text-white" />
+              </div>
+              <h4 class="font-semibold text-gray-800">趋势分析</h4>
+            </div>
+            <div class="space-y-3">
+              <div class="p-3 bg-white/60 rounded-lg">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-medium">ATM业务</span>
+                  <div class="flex items-center">
+                    <TrendingUp v-if="atmData.trend > 0" class="w-4 h-4 text-green-500 mr-1" />
+                    <TrendingDown v-else class="w-4 h-4 text-red-500 mr-1" />
+                    <span class="text-sm font-bold" :class="atmData.trend > 0 ? 'text-green-600' : 'text-red-600'">
+                      {{ atmData.trend > 0 ? '+' : '' }}{{ atmData.trend.toFixed(1) }}%
+                    </span>
+                  </div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-blue-500 h-2 rounded-full transition-all duration-1000" :style="{ width: `${Math.min(Math.abs(atmData.trend) * 10, 100)}%` }"></div>
+                </div>
+              </div>
+              <div class="p-3 bg-white/60 rounded-lg">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-medium">外汇业务</span>
+                  <div class="flex items-center">
+                    <TrendingUp v-if="fxData.trend > 0" class="w-4 h-4 text-green-500 mr-1" />
+                    <TrendingDown v-else class="w-4 h-4 text-red-500 mr-1" />
+                    <span class="text-sm font-bold" :class="fxData.trend > 0 ? 'text-green-600' : 'text-red-600'">
+                      {{ fxData.trend > 0 ? '+' : '' }}{{ fxData.trend.toFixed(1) }}%
+                    </span>
+                  </div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-emerald-500 h-2 rounded-full transition-all duration-1000" :style="{ width: `${Math.min(Math.abs(fxData.trend) * 10, 100)}%` }"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 地域分布 -->
+          <div class="bg-gradient-to-br from-white via-blue-50/30 to-cyan-50/50 rounded-xl p-5 border border-blue-100/60 shadow-md">
+            <div class="flex items-center mb-4">
+              <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mr-3">
+                <MapPin class="w-4 h-4 text-white" />
+              </div>
+              <h4 class="font-semibold text-gray-800">地域分布</h4>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-sm">
+                <span>活跃省份</span>
+                <span class="font-bold text-blue-600">{{ (atmData.provinceData.length + fxData.provinceData.length) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span>ATM覆盖</span>
+                <span class="font-bold text-blue-600">{{ atmData.provinceData.length }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span>FX覆盖</span>
+                <span class="font-bold text-emerald-600">{{ fxData.provinceData.length }}</span>
+              </div>
+              <div class="mt-3 p-2 bg-white/60 rounded-lg">
+                <div class="text-xs text-gray-600 mb-1">覆盖率</div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-gradient-to-r from-blue-500 to-emerald-500 h-2 rounded-full transition-all duration-1000" style="width: 85%"></div>
+                </div>
+                <div class="text-xs text-gray-600 mt-1 text-right">85%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 详细分析模式 -->
+      <div v-else-if="displayMode === 'detailed'" class="h-full p-4">
+        <!-- 全部业务：显示ATM和FX的详细对比 -->
+        <div v-if="selectedBusinessType === 'all'" class="grid grid-cols-2 gap-4 max-h-96">
+          <!-- ATM业务详细分析 -->
+          <div class="bg-background rounded-lg p-4 border h-80">
+            <h4 class="font-semibold text-sm mb-3 flex items-center">
+              <CreditCard class="w-4 h-4 mr-2 text-blue-500" />
+              ATM业务分析
+            </h4>
+            <div class="h-56">
+              <v-chart
+                ref="atmDetailChartRef"
+                class="w-full h-full"
+                :option="atmDetailChartOption"
+                :autoresize="true"
+              />
+            </div>
+            <!-- ATM业务数据摘要 -->
+            <div class="mt-2 text-xs text-gray-600">
+              <div class="flex justify-between">
+                <span>省份数量:</span>
+                <span>{{ atmData.provinceData.length }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>金额档次:</span>
+                <span>{{ atmData.amountDistribution.length }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FX外汇业务详细分析 -->
+          <div class="bg-background rounded-lg p-4 border h-80">
+            <h4 class="font-semibold text-sm mb-3 flex items-center">
+              <DollarSign class="w-4 h-4 mr-2 text-green-500" />
+              外汇业务分析
+            </h4>
+            <div class="h-56">
+              <v-chart
+                ref="fxDetailChartRef"
+                class="w-full h-full"
+                :option="fxDetailChartOption"
+                :autoresize="true"
+              />
+            </div>
+            <!-- FX业务数据摘要 -->
+            <div class="mt-2 text-xs text-gray-600">
+              <div class="flex justify-between">
+                <span>热门币种:</span>
+                <span>{{ getTopCurrency() }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>主要目的:</span>
+                <span>{{ getTopPurpose() }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ATM业务：显示ATM专属的多维度分析 -->
+        <div v-else-if="selectedBusinessType === 'atm'" class="space-y-4">
+          <!-- 上半部分：省份分布和金额分布 -->
+          <div class="grid grid-cols-2 gap-4">
+            <!-- ATM省份分布 -->
+            <div class="bg-background rounded-lg p-4 border h-72">
+              <h4 class="font-semibold text-sm mb-3 flex items-center">
+                <MapPin class="w-4 h-4 mr-2 text-blue-500" />
+                省份分布分析
+              </h4>
+              <div class="h-52">
+                <v-chart
+                  class="w-full h-full"
+                  :option="atmProvinceChartOption"
+                  :autoresize="true"
+                />
+              </div>
+            </div>
+
+            <!-- ATM金额分布 -->
+            <div class="bg-background rounded-lg p-4 border h-72">
+              <h4 class="font-semibold text-sm mb-3 flex items-center">
+                <CreditCard class="w-4 h-4 mr-2 text-blue-500" />
+                金额分布分析
+              </h4>
+              <div class="h-52">
+                <v-chart
+                  ref="atmDetailChartRef"
+                  class="w-full h-full"
+                  :option="atmDetailChartOption"
+                  :autoresize="true"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 下半部分：关键指标卡片 -->
+          <div class="grid grid-cols-5 gap-4">
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs text-blue-600 font-medium">总交易量</div>
+                  <div class="text-lg font-bold text-blue-700">{{ formatNumber(atmData.totalTransactions) }}</div>
+                </div>
+                <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <Target class="w-4 h-4 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs text-blue-600 font-medium">总金额</div>
+                  <div class="text-lg font-bold text-blue-700">{{ formatCurrency(atmData.totalAmount) }}</div>
+                </div>
+                <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <DollarSign class="w-4 h-4 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs text-blue-600 font-medium">平均金额</div>
+                  <div class="text-lg font-bold text-blue-700">{{ formatCurrency(atmData.avgAmount) }}</div>
+                </div>
+                <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <CreditCard class="w-4 h-4 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs text-blue-600 font-medium">活跃省份</div>
+                  <div class="text-lg font-bold text-blue-700">{{ atmData.provinceData.length }}</div>
+                </div>
+                <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <MapPin class="w-4 h-4 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs text-blue-600 font-medium">增长率</div>
+                  <div class="text-lg font-bold" :class="atmData.trend > 0 ? 'text-green-600' : 'text-red-600'">
+                    {{ atmData.trend > 0 ? '+' : '' }}{{ atmData.trend.toFixed(1) }}%
+                  </div>
+                </div>
+                <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <TrendingUp v-if="atmData.trend > 0" class="w-4 h-4 text-green-600" />
+                  <TrendingDown v-else class="w-4 h-4 text-red-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FX业务：显示FX专属的多维度分析 -->
+        <div v-else class="space-y-4 h-full overflow-y-auto">
+          <!-- 第一行：目的分布、币种分布、年龄分布 -->
+          <div class="grid grid-cols-3 gap-4">
+            <!-- FX目的分布 -->
+            <div class="group bg-gradient-to-br from-white via-green-50/30 to-emerald-50/50 rounded-xl p-4 border border-green-100/60 h-88 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-500 hover:-translate-y-2 cursor-pointer relative overflow-hidden">
+              <!-- 背景装饰 -->
+              <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-400/10 to-emerald-400/10 rounded-full -translate-y-10 translate-x-10 group-hover:scale-150 transition-transform duration-700"></div>
+
+              <div class="flex items-center justify-between mb-3 relative z-10">
+                <h4 class="font-semibold text-sm flex items-center text-gray-700">
+                  <div class="w-9 h-9 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mr-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg">
+                    <Target class="w-4 h-4 text-white" />
+                  </div>
+                  <span class="group-hover:text-green-700 transition-colors duration-300">交易目的分析</span>
+                </h4>
+                <div class="text-xs text-green-600 bg-green-100/80 backdrop-blur-sm px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                  点击交互
+                </div>
+              </div>
+
+              <div class="h-69 relative overflow-hidden rounded-xl bg-white/50 backdrop-blur-sm border border-green-100/50">
+                <v-chart
+                  ref="fxDetailChartRef"
+                  class="w-full h-full transition-all duration-500 group-hover:scale-105"
+                  :option="fxDetailChartOption"
+                  :autoresize="true"
+                  @click="handleChartClick"
+                />
+                <!-- 悬浮遮罩 -->
+                <div class="absolute inset-0 bg-gradient-to-t from-green-500/5 via-transparent to-emerald-500/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              </div>
+            </div>
+
+            <!-- FX币种分布 -->
+            <div class="group bg-gradient-to-br from-white via-blue-50/30 to-cyan-50/50 rounded-xl p-4 border border-blue-100/60 h-88 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-500 hover:-translate-y-2 cursor-pointer relative overflow-hidden">
+              <!-- 背景装饰 -->
+              <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/10 to-cyan-400/10 rounded-full -translate-y-10 translate-x-10 group-hover:scale-150 transition-transform duration-700"></div>
+
+              <div class="flex items-center justify-between mb-3 relative z-10">
+                <h4 class="font-semibold text-sm flex items-center text-gray-700">
+                  <div class="w-9 h-9 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg">
+                    <DollarSign class="w-4 h-4 text-white" />
+                  </div>
+                  <span class="group-hover:text-blue-700 transition-colors duration-300">币种分布分析</span>
+                </h4>
+                <div class="text-xs text-blue-600 bg-blue-100/80 backdrop-blur-sm px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                  点击交互
+                </div>
+              </div>
+
+              <div class="h-69 relative overflow-hidden rounded-xl bg-white/50 backdrop-blur-sm border border-blue-100/50">
+                <v-chart
+                  class="w-full h-full transition-all duration-500 group-hover:scale-105"
+                  :option="fxKindChartOption"
+                  :autoresize="true"
+                  @click="handleChartClick"
+                />
+                <!-- 悬浮遮罩 -->
+                <div class="absolute inset-0 bg-gradient-to-t from-blue-500/5 via-transparent to-cyan-500/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              </div>
+            </div>
+
+            <!-- FX年龄分布 -->
+            <div class="group bg-gradient-to-br from-white via-purple-50/30 to-pink-50/50 rounded-xl p-4 border border-purple-100/60 h-88 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-500 hover:-translate-y-2 cursor-pointer relative overflow-hidden">
+              <!-- 背景装饰 -->
+              <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full -translate-y-10 translate-x-10 group-hover:scale-150 transition-transform duration-700"></div>
+
+              <div class="flex items-center justify-between mb-3 relative z-10">
+                <h4 class="font-semibold text-sm flex items-center text-gray-700">
+                  <div class="w-9 h-9 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg">
+                    <TrendingUp class="w-4 h-4 text-white" />
+                  </div>
+                  <span class="group-hover:text-purple-700 transition-colors duration-300">年龄分布分析</span>
+                </h4>
+                <div class="text-xs text-purple-600 bg-purple-100/80 backdrop-blur-sm px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                  点击交互
+                </div>
+              </div>
+
+              <div class="h-69 relative overflow-hidden rounded-xl bg-white/50 backdrop-blur-sm border border-purple-100/50">
+                <v-chart
+                  class="w-full h-full transition-all duration-500 group-hover:scale-105"
+                  :option="fxAgeChartOption"
+                  :autoresize="true"
+                  @click="handleChartClick"
+                />
+                <!-- 悬浮遮罩 -->
+                <div class="absolute inset-0 bg-gradient-to-t from-purple-500/5 via-transparent to-pink-500/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 第二行：FX专属关键指标卡片 -->
+          <div class="grid grid-cols-4 gap-4">
+            <!-- FX总交易量卡片 -->
+            <div class="group bg-gradient-to-br from-white via-green-50/40 to-emerald-50/60 rounded-xl p-4 border border-green-100/60 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-green-400/5 to-emerald-400/5 rounded-full -translate-y-8 translate-x-8 group-hover:scale-125 transition-transform duration-500"></div>
+
+              <div class="flex items-center justify-between relative z-10">
+                <div>
+                  <div class="text-xs text-green-600 font-medium mb-1 group-hover:text-green-700 transition-colors duration-300">FX总交易量</div>
+                  <div class="text-lg font-bold text-green-700 group-hover:text-green-800 transition-colors duration-300">{{ formatNumber(fxData.total) }}</div>
+                  <div class="text-xs text-green-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">点击查看详情</div>
+                </div>
+                <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                  <Target class="w-5 h-5 text-white" />
+                </div>
+              </div>
+            </div>
+
+            <!-- FX总金额卡片 -->
+            <div class="group bg-gradient-to-br from-white via-blue-50/40 to-cyan-50/60 rounded-xl p-4 border border-blue-100/60 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-blue-400/5 to-cyan-400/5 rounded-full -translate-y-8 translate-x-8 group-hover:scale-125 transition-transform duration-500"></div>
+
+              <div class="flex items-center justify-between relative z-10">
+                <div>
+                  <div class="text-xs text-blue-600 font-medium mb-1 group-hover:text-blue-700 transition-colors duration-300">FX总金额</div>
+                  <div class="text-lg font-bold text-blue-700 group-hover:text-blue-800 transition-colors duration-300">{{ formatCurrency(fxData.sumAmount) }}</div>
+                  <div class="text-xs text-blue-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">点击查看详情</div>
+                </div>
+                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                  <DollarSign class="w-5 h-5 text-white" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 热门币种卡片 -->
+            <div class="group bg-gradient-to-br from-white via-purple-50/40 to-pink-50/60 rounded-xl p-4 border border-purple-100/60 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-purple-400/5 to-pink-400/5 rounded-full -translate-y-8 translate-x-8 group-hover:scale-125 transition-transform duration-500"></div>
+
+              <div class="flex items-center justify-between relative z-10">
+                <div>
+                  <div class="text-xs text-purple-600 font-medium mb-1 group-hover:text-purple-700 transition-colors duration-300">热门币种</div>
+                  <div class="text-lg font-bold text-purple-700 group-hover:text-purple-800 transition-colors duration-300">{{ getTopCurrency() }}</div>
+                  <div class="text-xs text-purple-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">点击查看详情</div>
+                </div>
+                <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                  <CreditCard class="w-5 h-5 text-white" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 主要目的卡片 -->
+            <div class="group bg-gradient-to-br from-white via-orange-50/40 to-amber-50/60 rounded-xl p-4 border border-orange-100/60 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-orange-400/5 to-amber-400/5 rounded-full -translate-y-8 translate-x-8 group-hover:scale-125 transition-transform duration-500"></div>
+
+              <div class="flex items-center justify-between relative z-10">
+                <div>
+                  <div class="text-xs text-orange-600 font-medium mb-1 group-hover:text-orange-700 transition-colors duration-300">主要目的</div>
+                  <div class="text-lg font-bold text-orange-700 group-hover:text-orange-800 transition-colors duration-300">{{ getTopPurpose() }}</div>
+                  <div class="text-xs text-orange-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">点击查看详情</div>
+                </div>
+                <div class="w-10 h-10 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                  <MapPin class="w-5 h-5 text-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 对比分析模式 -->
+      <div v-else class="h-full p-4 flex flex-col">
+        <!-- 全部业务：ATM vs FX 对比分析 -->
+        <div v-if="selectedBusinessType === 'all'">
+          <!-- 对比分析标题 -->
+          <div class="mb-4">
+            <h4 class="font-semibold text-sm text-gray-700">业务类型对比分析</h4>
+            <p class="text-xs text-gray-500">ATM与外汇业务关键指标对比</p>
+          </div>
+
+          <!-- 图表容器 - 固定高度 -->
+          <div class="h-80 w-full">
+            <v-chart
+              ref="comparisonChartRef"
+              class="w-full h-full"
+              :option="comparisonChartOption"
+              :autoresize="true"
+              @click="handleChartClick"
+            />
+          </div>
+
+          <!-- 对比数据表格 -->
+          <div class="mt-4 bg-gray-50 rounded-lg p-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <h5 class="font-medium text-sm text-blue-600">ATM业务</h5>
+                <div class="space-y-1 text-xs">
+                  <div class="flex justify-between">
+                    <span>交易笔数:</span>
+                    <span class="font-medium">{{ formatNumber(atmData.totalTransactions) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>总金额:</span>
+                    <span class="font-medium">{{ formatCurrency(atmData.totalAmount) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>平均金额:</span>
+                    <span class="font-medium">{{ formatCurrency(atmData.avgAmount) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>增长率:</span>
+                    <span class="font-medium" :class="atmData.trend > 0 ? 'text-green-600' : 'text-red-600'">
+                      {{ atmData.trend > 0 ? '+' : '' }}{{ atmData.trend.toFixed(1) }}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <h5 class="font-medium text-sm text-green-600">外汇业务</h5>
+                <div class="space-y-1 text-xs">
+                  <div class="flex justify-between">
+                    <span>交易笔数:</span>
+                    <span class="font-medium">{{ formatNumber(fxData.total) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>总金额:</span>
+                    <span class="font-medium">{{ formatCurrency(fxData.sumAmount) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>平均金额:</span>
+                    <span class="font-medium">{{ formatCurrency(fxData.avgAmount) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>增长率:</span>
+                    <span class="font-medium" :class="fxData.trend > 0 ? 'text-green-600' : 'text-red-600'">
+                      {{ fxData.trend > 0 ? '+' : '' }}{{ fxData.trend.toFixed(1) }}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ATM业务：省份 vs 金额分布对比 -->
+        <div v-else-if="selectedBusinessType === 'atm'">
+          <!-- 对比分析标题 -->
+          <div class="mb-4">
+            <h4 class="font-semibold text-sm text-gray-700">ATM业务对比分析</h4>
+            <p class="text-xs text-gray-500">省份分布与金额分布对比</p>
+          </div>
+
+          <!-- 图表容器 -->
+          <div class="h-80 w-full">
+            <v-chart
+              class="w-full h-full"
+              :option="atmComparisonChartOption"
+              :autoresize="true"
+            />
+          </div>
+
+          <!-- ATM对比数据表格 -->
+          <div class="mt-4 bg-gray-50 rounded-lg p-4">
+            <div class="grid grid-cols-3 gap-4">
+              <div class="space-y-2">
+                <h5 class="font-medium text-sm text-blue-600">省份分析</h5>
+                <div class="space-y-1 text-xs">
+                  <div class="flex justify-between">
+                    <span>活跃省份:</span>
+                    <span class="font-medium">{{ atmData.provinceData.length }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>最高交易:</span>
+                    <span class="font-medium">{{ getTopAtmProvince() }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <h5 class="font-medium text-sm text-blue-600">金额分析</h5>
+                <div class="space-y-1 text-xs">
+                  <div class="flex justify-between">
+                    <span>金额档次:</span>
+                    <span class="font-medium">{{ atmData.amountDistribution.length }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>主要档次:</span>
+                    <span class="font-medium">{{ getTopAtmAmount() }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <h5 class="font-medium text-sm text-blue-600">总体指标</h5>
+                <div class="space-y-1 text-xs">
+                  <div class="flex justify-between">
+                    <span>总交易量:</span>
+                    <span class="font-medium">{{ formatNumber(atmData.totalTransactions) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>增长率:</span>
+                    <span class="font-medium" :class="atmData.trend > 0 ? 'text-green-600' : 'text-red-600'">
+                      {{ atmData.trend > 0 ? '+' : '' }}{{ atmData.trend.toFixed(1) }}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FX业务：对比分析模式不可用 -->
+        <div v-else class="h-full flex items-center justify-center">
+          <div class="text-center space-y-4">
+            <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+              <DollarSign class="w-8 h-8 text-gray-400" />
+            </div>
+            <div>
+              <h4 class="font-medium text-gray-700 mb-2">FX业务对比分析</h4>
+              <p class="text-sm text-gray-500 mb-4">外汇业务暂不支持对比分析模式</p>
+              <p class="text-xs text-gray-400">请选择"总览"或"详细分析"模式查看FX业务数据</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 数据统计卡片 - 紧凑布局 (在FX专项模式下隐藏) -->
+    <div v-if="!(selectedBusinessType === 'fx' && (displayMode === 'detailed' || displayMode === 'comparison'))" class="grid grid-cols-4 gap-2 mt-3">
+      <div class="bg-gradient-to-r from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-200/50">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs text-blue-600 font-medium">总业务量</p>
+            <p class="text-sm font-bold text-blue-700">{{ formatNumber(totalBusinessCount) }}</p>
+          </div>
+          <div class="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
+            <Target class="w-3 h-3 text-blue-600" />
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-r from-green-500/10 to-green-600/10 rounded-lg p-2 border border-green-200/50">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs text-green-600 font-medium">ATM占比</p>
+            <p class="text-sm font-bold text-green-700">{{ atmData.percentage }}%</p>
+          </div>
+          <div class="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center">
+            <CreditCard class="w-3 h-3 text-green-600" />
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-r from-orange-500/10 to-orange-600/10 rounded-lg p-2 border border-orange-200/50">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs text-orange-600 font-medium">FX占比</p>
+            <p class="text-sm font-bold text-orange-700">{{ fxData.percentage }}%</p>
+          </div>
+          <div class="w-6 h-6 bg-orange-500/20 rounded-full flex items-center justify-center">
+            <DollarSign class="w-3 h-3 text-orange-600" />
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-r from-purple-500/10 to-purple-600/10 rounded-lg p-2 border border-purple-200/50">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs text-purple-600 font-medium">活跃省份</p>
+            <p class="text-sm font-bold text-purple-700">{{ activeProvinces }}</p>
+          </div>
+          <div class="w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center">
+            <MapPin class="w-3 h-3 text-purple-600" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import {
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  Target,
+  CreditCard,
+  DollarSign,
+  MapPin,
+  Globe,
+  BarChart3
+} from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { PieChart, BarChart, LineChart } from 'echarts/charts'
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent
+} from 'echarts/components'
+import VChart from 'vue-echarts'
+
+// 注册ECharts组件
+use([
+  CanvasRenderer,
+  PieChart,
+  BarChart,
+  LineChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent
+])
+
+/**
+ * 组件属性定义
+ */
+interface Props {
+  title?: string
+  subtitle?: string
+  chartHeight?: string
+  autoRefresh?: boolean
+  refreshInterval?: number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  title: '业务类型分布统计',
+  subtitle: 'ATM与外汇业务数据分析',
+  chartHeight: "calc(100vh - 200px)",
+  autoRefresh: true,
+  refreshInterval: 30000
+})
+
+/**
+ * 响应式数据
+ */
+const selectedBusinessType = ref<'all' | 'atm' | 'fx'>('all')
+const displayMode = ref<'overview' | 'detailed' | 'comparison'>('overview')
+const isLoading = ref(false)
+const chartContainer = ref<HTMLElement | null>(null)
+const mainChartRef = ref<InstanceType<typeof VChart> | null>(null)
+const atmDetailChartRef = ref<InstanceType<typeof VChart> | null>(null)
+const fxDetailChartRef = ref<InstanceType<typeof VChart> | null>(null)
+const comparisonChartRef = ref<InstanceType<typeof VChart> | null>(null)
+
+// 业务数据接口 - 根据MySQL表结构定义
+interface ATMData {
+  // 基础统计
+  totalTransactions: number
+  totalAmount: number
+  avgAmount: number
+  percentage: number
+  trend: number
+
+  // 省份分布数据 (来自 atm_dist_province)
+  provinceData: Array<{
+    province: string
+    transcation_times: number
+    sum_amount: number
+  }>
+
+  // 金额分布数据 (来自 atm_dist_amount)
+  amountDistribution: Array<{
+    amountLevel: string
+    total: number
+  }>
+
+  // KPI数据 (来自 atm_minute_kpi)
+  kpiData: Array<{
+    time_stamp: string
+    total_time: number
+    total_amount: number
+    total: number
+  }>
+}
+
+interface FXData {
+  // 基础统计 (total:总交易笔数   sumAmount：总交易金额    avgAmount：平均交易金额     percentage：交易笔数占比     trend：交易笔数增长率)
+  total: number
+  sumAmount: number
+  avgAmount: number
+  percentage: number
+  trend: number
+
+  // 省份分布数据 (来自 fx_dist_province)
+  provinceData: Array<{
+    province: string
+    total: number
+    sum_amount: number
+  }>
+
+  // 目的分布数据 (来自 fx_dist_purpose)
+  purposeData: Array<{
+    purpose: string
+    total: number
+  }>
+
+  // 币种分布数据 (来自 fx_dist_kind)
+  kindData: Array<{
+    kind: string
+    total: number
+  }>
+
+  // 年龄分布数据 (来自 fx_dist_age)
+  ageData: Array<{
+    ageLevel: string
+    total: number
+  }>
+
+  // KPI数据 (来自 fx_minute_kpi)
+  kpiData: Array<{
+    time_stamp: string
+    total_time: number
+    total_amount: number
+    total: number
+  }>
+}
+
+// ATM业务数据 - 使用丰富的模拟数据展示详细分析效果
+const atmData = ref<ATMData>({
+  totalTransactions: 18650,
+  totalAmount: 285600000,
+  avgAmount: 15310,
+  percentage: 72.3,
+  trend: 6.8,
+  // 更多省份数据，展示更好的分布效果
+  provinceData: [
+    { province: '北京', transcation_times: 3200, sum_amount: 48500000 },
+    { province: '上海', transcation_times: 2850, sum_amount: 42800000 },
+    { province: '广东', transcation_times: 3800, sum_amount: 55200000 },
+    { province: '江苏', transcation_times: 2400, sum_amount: 35600000 },
+    { province: '浙江', transcation_times: 2100, sum_amount: 31200000 },
+    { province: '山东', transcation_times: 1950, sum_amount: 28900000 },
+    { province: '四川', transcation_times: 1650, sum_amount: 24800000 },
+    { province: '河南', transcation_times: 1400, sum_amount: 20600000 }
+  ],
+  // 更详细的金额分布，展示更真实的数据
+  amountDistribution: [
+    { amountLevel: '500以下', total: 3200 },
+    { amountLevel: '500-1000', total: 4800 },
+    { amountLevel: '1000-3000', total: 6500 },
+    { amountLevel: '3000-5000', total: 2800 },
+    { amountLevel: '5000-10000', total: 1200 },
+    { amountLevel: '10000-20000', total: 150 }
+  ],
+  kpiData: []
+})
+
+// FX外汇业务数据 - 使用模拟数据（与ATM数据保持一致的比例）
+const fxData = ref<FXData>({
+  total: 7150,
+  sumAmount: 168400000,
+  avgAmount: 23550,
+  percentage: 27.7,
+  trend: 4.2,
+  provinceData: [
+    { province: '北京', total: 1350, sum_amount: 31800000 },
+    { province: '上海', total: 1250, sum_amount: 29400000 },
+    { province: '广东', total: 1580, sum_amount: 37200000 },
+    { province: '江苏', total: 920, sum_amount: 21600000 },
+    { province: '浙江', total: 850, sum_amount: 20000000 },
+    { province: '山东', total: 680, sum_amount: 16000000 },
+    { province: '四川', total: 520, sum_amount: 12400000 }
+  ],
+  purposeData: [
+    { purpose: '旅游', total: 2860 },
+    { purpose: '投资', total: 2145 },
+    { purpose: '留学', total: 1430 },
+    { purpose: '商务', total: 715 }
+  ],
+  kindData: [
+    { kind: 'USD', total: 3220 },
+    { kind: 'EUR', total: 1820 },
+    { kind: 'JPY', total: 1215 },
+    { kind: 'GBP', total: 895 }
+  ],
+  ageData: [
+    { ageLevel: '18-30', total: 2145 },
+    { ageLevel: '31-45', total: 3220 },
+    { ageLevel: '46-60', total: 1430 },
+    { ageLevel: '60+', total: 355 }
+  ],
+  kpiData: []
+})
+
+/**
+ * 计算属性
+ */
+const chartContainerStyle = computed(() => ({
+  height: props.chartHeight
+}))
+
+const totalBusinessCount = computed(() => {
+  return atmData.value.totalTransactions + fxData.value.total
+})
+
+const activeProvinces = computed(() => {
+  // 计算活跃省份数量
+  const atmProvinces = new Set(atmData.value.provinceData.map(item => item.province))
+  const fxProvinces = new Set(fxData.value.provinceData.map(item => item.province))
+  const allProvinces = new Set([...atmProvinces, ...fxProvinces])
+  return allProvinces.size
+})
+
+/**
+ * 🚀 现代化总览图表配置 - 更炫酷的业务分布展示
+ */
+const modernOverviewChartOption = computed(() => {
+  const totalTransactions = atmData.value.totalTransactions + fxData.value.total
+  const atmPercentage = totalTransactions > 0 ? (atmData.value.totalTransactions / totalTransactions * 100) : 0
+  const fxPercentage = totalTransactions > 0 ? (fxData.value.total / totalTransactions * 100) : 0
+
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      textStyle: {
+        color: '#374151',
+        fontSize: 12
+      },
+      formatter: (params: any) => {
+        return `
+          <div style="padding: 8px;">
+            <div style="font-weight: bold; margin-bottom: 4px;">${params.name}</div>
+            <div style="display: flex; align-items: center; margin-bottom: 2px;">
+              <div style="width: 8px; height: 8px; background: ${params.color}; border-radius: 50%; margin-right: 6px;"></div>
+              <span>交易笔数: ${formatNumber(params.value)}</span>
+            </div>
+            <div>占比: ${params.percent}%</div>
+          </div>
+        `
+      }
+    },
+    legend: {
+      orient: 'horizontal',
+      bottom: '5%',
+      left: 'center',
+      textStyle: {
+        color: '#6b7280',
+        fontSize: 12
+      },
+      itemWidth: 12,
+      itemHeight: 12,
+      itemGap: 20
+    },
+    series: [
+      {
+        name: '业务分布',
+        type: 'pie',
+        radius: ['45%', '75%'],
+        center: ['50%', '45%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: '#fff',
+          borderWidth: 3,
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.1)'
+        },
+        label: {
+          show: true,
+          position: 'outside',
+          formatter: '{b}\n{d}%',
+          fontSize: 12,
+          fontWeight: 'bold',
+          color: '#374151'
+        },
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 20,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.2)'
+          },
+          label: {
+            show: true,
+            fontSize: 14,
+            fontWeight: 'bold'
+          }
+        },
+        data: [
+          {
+            value: atmData.value.totalTransactions,
+            name: 'ATM业务',
+            itemStyle: {
+              color: {
+                type: 'linear',
+                x: 0, y: 0, x2: 1, y2: 1,
+                colorStops: [
+                  { offset: 0, color: '#3b82f6' },
+                  { offset: 1, color: '#1d4ed8' }
+                ]
+              }
+            }
+          },
+          {
+            value: fxData.value.total,
+            name: '外汇业务',
+            itemStyle: {
+              color: {
+                type: 'linear',
+                x: 0, y: 0, x2: 1, y2: 1,
+                colorStops: [
+                  { offset: 0, color: '#10b981' },
+                  { offset: 1, color: '#047857' }
+                ]
+              }
+            }
+          }
+        ],
+        animationType: 'scale',
+        animationEasing: 'elasticOut',
+        animationDelay: (idx: number) => idx * 200
+      }
+    ]
+  }
+})
+
+/**
+ * 主图表配置 - 根据业务类型显示不同内容
+ */
+const mainChartOption = computed(() => {
+  // 根据选择的业务类型显示不同的图表
+  if (selectedBusinessType.value === 'atm') {
+    // ATM业务：显示省份分布
+    const data = atmData.value.provinceData.map((item, index) => ({
+      name: item.province,
+      value: item.transcation_times,
+      itemStyle: {
+        color: ['#3b82f6', '#1d4ed8', '#60a5fa', '#93c5fd', '#dbeafe'][index % 5]
+      }
+    }))
+
+    return {
+      backgroundColor: 'transparent',
+      title: {
+        text: 'ATM业务省份分布',
+        left: 'center',
+        top: 20,
+        textStyle: {
+          color: '#374151',
+          fontSize: 14,
+          fontWeight: 'bold'
+        }
+      },
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderColor: '#e5e7eb',
+        borderWidth: 1,
+        textStyle: {
+          color: '#374151',
+          fontSize: 12
+        },
+        formatter: (params: any) => {
+          return `
+            <div style="font-weight: 600; margin-bottom: 4px;">${params.name}</div>
+            <div>交易次数: ${formatNumber(params.value)}</div>
+            <div>占比: ${params.percent}%</div>
+          `
+        }
+      },
+      legend: {
+        orient: 'vertical',
+        left: '5%',
+        top: 'center',
+        textStyle: {
+          color: '#6b7280',
+          fontSize: 11
+        }
+      },
+      series: [{
+        name: 'ATM省份分布',
+        type: 'pie',
+        radius: ['35%', '65%'],
+        center: ['60%', '50%'],
+        data: data,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: '#fff',
+          borderWidth: 2
+        }
+      }]
+    }
+  } else if (selectedBusinessType.value === 'fx') {
+    // FX业务：显示币种分布 - 更现代化的设计
+    const data = fxData.value.kindData.map((item, index) => ({
+      name: item.kind,
+      value: item.total,
+      itemStyle: {
+        color: {
+          type: 'radial',
+          x: 0.5, y: 0.5, r: 0.8,
+          colorStops: [
+            { offset: 0, color: ['#10b981', '#059669', '#34d399', '#6ee7b7'][index % 4] },
+            { offset: 1, color: ['#047857', '#065f46', '#10b981', '#059669'][index % 4] }
+          ]
+        }
+      }
+    }))
+
+    return {
+      backgroundColor: 'transparent',
+      title: {
+        text: 'FX业务币种分布',
+        subtext: `总交易量: ${formatNumber(fxData.value.total)}`,
+        left: 'center',
+        top: 15,
+        textStyle: {
+          color: '#374151',
+          fontSize: 16,
+          fontWeight: 'bold'
+        },
+        subtextStyle: {
+          color: '#6b7280',
+          fontSize: 12
+        }
+      },
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: 'rgba(255, 255, 255, 0.98)',
+        borderColor: '#10b981',
+        borderWidth: 2,
+        textStyle: {
+          color: '#374151',
+          fontSize: 12
+        },
+        formatter: (params: any) => {
+          const percentage = ((params.value / fxData.value.total) * 100).toFixed(1)
+          return `
+            <div style="font-weight: 600; margin-bottom: 6px; color: #10b981;">${params.name}</div>
+            <div style="margin-bottom: 2px;">交易次数: <strong>${formatNumber(params.value)}</strong></div>
+            <div style="margin-bottom: 2px;">占比: <strong>${percentage}%</strong></div>
+            <div>金额: <strong>${formatCurrency(params.value * 22150)}</strong></div>
+          `
+        }
+      },
+      legend: {
+        orient: 'vertical',
+        left: '8%',
+        top: 'center',
+        textStyle: {
+          color: '#374151',
+          fontSize: 12,
+          fontWeight: '500'
+        },
+        itemWidth: 12,
+        itemHeight: 8,
+        itemGap: 12
+      },
+      series: [{
+        name: 'FX币种分布',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['65%', '55%'],
+        avoidLabelOverlap: false,
+        data: data,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 3,
+          shadowBlur: 10,
+          shadowColor: 'rgba(16, 185, 129, 0.3)'
+        },
+        label: {
+          show: true,
+          position: 'outside',
+          color: '#374151',
+          fontSize: 11,
+          fontWeight: '600',
+          formatter: '{b}\n{d}%'
+        },
+        labelLine: {
+          show: true,
+          length: 15,
+          length2: 10,
+          lineStyle: {
+            color: '#10b981',
+            width: 2
+          }
+        },
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 20,
+            shadowColor: 'rgba(16, 185, 129, 0.5)',
+            scale: true,
+            scaleSize: 5
+          }
+        }
+      }]
+    }
+  } else {
+    // 全部业务：显示业务类型对比
+    const data = [
+      {
+        name: 'ATM业务',
+        value: atmData.value.totalTransactions,
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 1, y2: 1,
+            colorStops: [
+              { offset: 0, color: '#3b82f6' },
+              { offset: 1, color: '#1d4ed8' }
+            ]
+          }
+        }
+      },
+      {
+        name: '外汇业务',
+        value: fxData.value.total,
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 1, y2: 1,
+            colorStops: [
+              { offset: 0, color: '#10b981' },
+              { offset: 1, color: '#059669' }
+            ]
+          }
+        }
+      }
+    ]
+
+    return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      textStyle: {
+        color: '#374151',
+        fontSize: 12
+      },
+      formatter: (params: any) => {
+        return `
+          <div style="font-weight: 600; margin-bottom: 4px;">${params.name}</div>
+          <div>交易笔数: ${formatNumber(params.value)}</div>
+          <div>占比: ${params.percent}%</div>
+        `
+      }
+    },
+    legend: {
+      orient: 'vertical',
+      left: '5%',
+      top: 'center',
+      textStyle: {
+        color: '#6b7280',
+        fontSize: 11
+      },
+      itemWidth: 10,
+      itemHeight: 6
+    },
+    series: [
+      {
+        name: '业务类型分布',
+        type: 'pie',
+        radius: ['35%', '65%'],
+        center: ['60%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: {
+          show: false,
+          position: 'center'
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 16,
+            fontWeight: 'bold',
+            color: '#374151'
+          },
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        },
+        labelLine: {
+          show: false
+        },
+        data: data
+      }]
+    }
+  }
+})
+
+/**
+ * ATM详细分析图表配置 - 显示金额分布
+ */
+const atmDetailChartOption = computed(() => {
+  const amountData = atmData.value.amountDistribution
+  if (!amountData || amountData.length === 0) return {}
+
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      textStyle: {
+        color: '#374151',
+        fontSize: 11
+      },
+      formatter: (params: any) => {
+        return `
+          <div style="font-weight: 600; margin-bottom: 4px;">${params.name}</div>
+          <div>交易笔数: ${formatNumber(params.value)}</div>
+          <div>占比: ${params.percent}%</div>
+        `
+      }
+    },
+    legend: {
+      bottom: 10,
+      textStyle: {
+        color: '#6b7280',
+        fontSize: 11
+      }
+    },
+    series: [
+      {
+        name: 'ATM金额分布',
+        type: 'pie',
+        radius: ['30%', '60%'],
+        center: ['50%', '45%'],
+        data: amountData.map((item, index) => ({
+          name: item.amountLevel,
+          value: item.total,
+          itemStyle: {
+            color: ['#3b82f6', '#1d4ed8', '#60a5fa', '#93c5fd', '#dbeafe'][index % 5]
+          }
+        })),
+        itemStyle: {
+          borderRadius: 4,
+          borderColor: '#fff',
+          borderWidth: 1
+        }
+      }
+    ]
+  }
+})
+
+/**
+ * FX详细分析图表配置 - 显示目的分布
+ */
+const fxDetailChartOption = computed(() => {
+  const purposeData = fxData.value.purposeData
+  if (!purposeData || purposeData.length === 0) return {}
+
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      textStyle: {
+        color: '#374151',
+        fontSize: 11
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '5%',
+      top: '8%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: purposeData.map(item => item.purpose),
+      axisLine: {
+        lineStyle: { color: '#e5e7eb' }
+      },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 10
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 10
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#f3f4f6',
+          type: 'dashed'
+        }
+      }
+    },
+    series: [
+      {
+        name: 'FX目的分布',
+        type: 'bar',
+        data: purposeData.map(item => item.total),
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: '#10b981' },
+              { offset: 1, color: '#059669' }
+            ]
+          },
+          borderRadius: [4, 4, 0, 0]
+        },
+        barWidth: '60%'
+      }
+    ]
+  }
+})
+
+/**
+ * ATM省份分布图表配置
+ */
+const atmProvinceChartOption = computed(() => {
+  const provinceData = atmData.value.provinceData
+  if (!provinceData || provinceData.length === 0) return {}
+
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      textStyle: {
+        color: '#374151',
+        fontSize: 11
+      },
+      formatter: (params: any) => {
+        return `
+          <div style="font-weight: 600; margin-bottom: 4px;">${params.name}</div>
+          <div>交易次数: ${formatNumber(params.value)}</div>
+          <div>占比: ${params.percent}%</div>
+        `
+      }
+    },
+    legend: {
+      bottom: 10,
+      textStyle: {
+        color: '#6b7280',
+        fontSize: 11
+      }
+    },
+    series: [
+      {
+        name: 'ATM省份分布',
+        type: 'pie',
+        radius: ['30%', '60%'],
+        center: ['50%', '45%'],
+        data: provinceData.map((item, index) => ({
+          name: item.province,
+          value: item.transcation_times,
+          itemStyle: {
+            color: ['#3b82f6', '#1d4ed8', '#60a5fa', '#93c5fd', '#dbeafe'][index % 5]
+          }
+        })),
+        itemStyle: {
+          borderRadius: 4,
+          borderColor: '#fff',
+          borderWidth: 1
+        }
+      }
+    ]
+  }
+})
+
+/**
+ * FX币种分布图表配置
+ */
+const fxKindChartOption = computed(() => {
+  const kindData = fxData.value.kindData
+  if (!kindData || kindData.length === 0) return {}
+
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      textStyle: {
+        color: '#374151',
+        fontSize: 11
+      },
+      formatter: (params: any) => {
+        return `
+          <div style="font-weight: 600; margin-bottom: 4px;">${params.name}</div>
+          <div>交易次数: ${formatNumber(params.value)}</div>
+          <div>占比: ${params.percent}%</div>
+        `
+      }
+    },
+    legend: {
+      bottom: 5,
+      textStyle: {
+        color: '#6b7280',
+        fontSize: 10
+      }
+    },
+    series: [
+      {
+        name: 'FX币种分布',
+        type: 'pie',
+        radius: ['30%', '65%'],
+        center: ['50%', '50%'],
+        data: kindData.map((item, index) => ({
+          name: item.kind,
+          value: item.total,
+          itemStyle: {
+            color: ['#10b981', '#059669', '#34d399', '#6ee7b7', '#a7f3d0'][index % 5]
+          }
+        })),
+        itemStyle: {
+          borderRadius: 4,
+          borderColor: '#fff',
+          borderWidth: 1
+        }
+      }
+    ]
+  }
+})
+
+/**
+ * FX年龄分布图表配置
+ */
+const fxAgeChartOption = computed(() => {
+  const ageData = fxData.value.ageData
+  if (!ageData || ageData.length === 0) return {}
+
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      textStyle: {
+        color: '#374151',
+        fontSize: 11
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '5%',
+      top: '8%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: ageData.map(item => item.ageLevel),
+      axisLine: {
+        lineStyle: { color: '#e5e7eb' }
+      },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 10
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 10
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#f3f4f6',
+          type: 'dashed'
+        }
+      }
+    },
+    series: [
+      {
+        name: 'FX年龄分布',
+        type: 'bar',
+        data: ageData.map(item => item.total),
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: '#10b981' },
+              { offset: 1, color: '#059669' }
+            ]
+          },
+          borderRadius: [4, 4, 0, 0]
+        },
+        barWidth: '60%'
+      }
+    ]
+  }
+})
+
+/**
+ * 对比分析图表配置
+ */
+const comparisonChartOption = computed(() => {
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      textStyle: {
+        color: '#374151',
+        fontSize: 12
+      }
+    },
+    legend: {
+      top: 10,
+      textStyle: {
+        color: '#6b7280',
+        fontSize: 12
+      }
+    },
+    grid: {
+      left: '8%',
+      right: '8%',
+      bottom: '12%',
+      top: '20%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: ['交易笔数', '总金额', '平均金额', '增长率'],
+      axisLine: {
+        lineStyle: { color: '#e5e7eb' }
+      },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 11
+      }
+    },
+    yAxis: [
+      {
+        type: 'value',
+        name: '数值',
+        position: 'left',
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: {
+          color: '#9ca3af',
+          fontSize: 11
+        },
+        splitLine: {
+          lineStyle: {
+            color: '#f3f4f6',
+            type: 'dashed'
+          }
+        }
+      },
+      {
+        type: 'value',
+        name: '百分比',
+        position: 'right',
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: {
+          color: '#9ca3af',
+          fontSize: 11,
+          formatter: '{value}%'
+        },
+        splitLine: { show: false }
+      }
+    ],
+    series: [
+      {
+        name: 'ATM业务',
+        type: 'bar',
+        yAxisIndex: 0,
+        data: [
+          atmData.value.totalTransactions / 1000,
+          atmData.value.totalAmount / 10000000,
+          atmData.value.avgAmount / 1000,
+          atmData.value.trend
+        ],
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: '#3b82f6' },
+              { offset: 1, color: '#1d4ed8' }
+            ]
+          },
+          borderRadius: [4, 4, 0, 0]
+        },
+        barWidth: '30%'
+      },
+      {
+        name: '外汇业务',
+        type: 'bar',
+        yAxisIndex: 0,
+        data: [
+          fxData.value.total / 1000,
+          fxData.value.sumAmount / 10000000,
+          fxData.value.avgAmount / 1000,
+          fxData.value.trend
+        ],
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: '#10b981' },
+              { offset: 1, color: '#059669' }
+            ]
+          },
+          borderRadius: [4, 4, 0, 0]
+        },
+        barWidth: '30%'
+      }
+    ]
+  }
+})
+
+/**
+ * ATM对比分析图表配置
+ */
+const atmComparisonChartOption = computed(() => {
+  const provinceData = atmData.value.provinceData.map(item => item.transcation_times)
+  const amountData = atmData.value.amountDistribution.map(item => item.total)
+
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      textStyle: {
+        color: '#374151',
+        fontSize: 12
+      }
+    },
+    legend: {
+      top: 10,
+      textStyle: {
+        color: '#6b7280',
+        fontSize: 12
+      }
+    },
+    grid: {
+      left: '8%',
+      right: '8%',
+      bottom: '12%',
+      top: '20%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: ['北京', '上海', '广东', '江苏', '浙江'],
+      axisLine: {
+        lineStyle: { color: '#e5e7eb' }
+      },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 11
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        color: '#9ca3af',
+        fontSize: 11
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#f3f4f6',
+          type: 'dashed'
+        }
+      }
+    },
+    series: [
+      {
+        name: '省份交易量',
+        type: 'bar',
+        data: provinceData,
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: '#3b82f6' },
+              { offset: 1, color: '#1d4ed8' }
+            ]
+          },
+          borderRadius: [4, 4, 0, 0]
+        },
+        barWidth: '60%'
+      }
+    ]
+  }
+})
+
+/**
+ * 工具函数
+ */
+const formatNumber = (value: number) => {
+  return value.toLocaleString()
+}
+
+const formatCurrency = (value: number) => {
+  return `¥${(value / 10000).toFixed(1)}万`
+}
+
+const getTopCurrency = () => {
+  if (fxData.value.kindData.length === 0) return 'USD'
+  const sortedKinds = [...fxData.value.kindData].sort((a, b) => b.total - a.total)
+  return sortedKinds[0]?.kind || 'USD'
+}
+
+const getTopPurpose = () => {
+  if (fxData.value.purposeData.length === 0) return '旅游'
+  const sortedPurposes = [...fxData.value.purposeData].sort((a, b) => b.total - a.total)
+  return sortedPurposes[0]?.purpose || '旅游'
+}
+
+const getTopProvince = () => {
+  // 合并ATM和FX的省份数据，找出交易量最高的省份
+  const allProvinces: { [key: string]: number } = {}
+
+  // 添加ATM省份数据
+  atmData.value.provinceData.forEach(item => {
+    allProvinces[item.province] = (allProvinces[item.province] || 0) + item.transcation_times
+  })
+
+  // 添加FX省份数据
+  fxData.value.provinceData.forEach(item => {
+    allProvinces[item.province] = (allProvinces[item.province] || 0) + item.total
+  })
+
+  // 找出交易量最高的省份
+  const sortedProvinces = Object.entries(allProvinces).sort((a, b) => b[1] - a[1])
+  return sortedProvinces[0]?.[0] || '北京'
+}
+
+const getTopAtmProvince = () => {
+  if (atmData.value.provinceData.length === 0) return '北京'
+  const sortedProvinces = [...atmData.value.provinceData].sort((a, b) => b.transcation_times - a.transcation_times)
+  return sortedProvinces[0]?.province || '北京'
+}
+
+const getTopAtmAmount = () => {
+  if (atmData.value.amountDistribution.length === 0) return '1000-5000'
+  const sortedAmounts = [...atmData.value.amountDistribution].sort((a, b) => b.total - a.total)
+  return sortedAmounts[0]?.amountLevel || '1000-5000'
+}
+
+/**
+ * 事件处理函数
+ */
+const handleBusinessTypeChange = () => {
+  console.log('业务类型切换为:', selectedBusinessType.value)
+  refreshData()
+}
+
+const handleDisplayModeChange = () => {
+  console.log('显示模式切换为:', displayMode.value)
+}
+
+const handleChartClick = (params: any) => {
+  console.log('图表点击事件:', params)
+  if (params.componentType === 'series') {
+    console.log('点击业务类型:', params.name)
+  }
+}
+
+const refreshData = async () => {
+  if (isLoading.value) return
+
+  isLoading.value = true
+  console.log('正在刷新业务类型数据...')
+
+  try {
+    // 临时使用模拟数据来展示ATM详细分析效果
+    console.log('🎯 使用模拟数据展示ATM业务详细分析')
+
+    // 保持当前的模拟数据不变，确保图表能正常显示
+    console.log('ATM模拟数据:', {
+      totalTransactions: atmData.value.totalTransactions,
+      provinceCount: atmData.value.provinceData.length,
+      amountLevels: atmData.value.amountDistribution.length
+    })
+
+    // 如果需要后端数据，可以取消下面的注释
+    // const backendData = await fetchBusinessDataFromBackend()
+    // if (backendData) {
+    //   atmData.value = backendData.atm
+    //   fxData.value = backendData.fx
+    // }
+
+    console.log('✅ 业务类型数据刷新完成（使用模拟数据）')
+  } catch (error) {
+    console.error('数据刷新失败:', error)
+    // 失败时保持模拟数据
+  } finally {
+    isLoading.value = false
+  }
+}
+
+/**
+ * 后端数据获取函数
+ */
+const fetchBusinessDataFromBackend = async (): Promise<{ atm: ATMData, fx: FXData } | null> => {
+  try {
+    console.log('正在从后端获取业务类型数据...', {
+      businessType: selectedBusinessType.value,
+      displayMode: displayMode.value
+    })
+
+    // 调用主进程的IPC接口获取业务数据
+    const response = await (window.api as any).fetchBusinessData({
+      businessType: selectedBusinessType.value,
+      analysisType: displayMode.value
+    })
+    console.log('后端返回的数据:', response)
+
+    const data = response.data
+
+    // 处理ATM数据
+    const atmData: ATMData = {
+      // 计算总体指标
+      totalTransactions: data.atm?.province?.reduce((sum: number, item: any) => sum + (item.transcation_times || 0), 0) || 0,
+      totalAmount: data.atm?.province?.reduce((sum: number, item: any) => sum + (item.sum_amount || 0), 0) || 0,
+      avgAmount: 0, // 后面计算
+      trend: Math.random() * 10 - 5, // 临时随机值，等后端提供
+      percentage: 0, // 后面计算
+
+      // 省份分布数据（直接使用后端数据）
+      provinceData: data.atm?.province || [],
+
+      // 金额分布数据（直接使用后端数据）
+      amountDistribution: data.atm?.amount || [],
+
+      // KPI数据（直接使用后端数据）
+      kpiData: data.atm?.kpi || []
+    }
+
+    // 处理FX数据
+    const fxData: FXData = {
+      // 计算总体指标
+      total: data.fx?.province?.reduce((sum: number, item: any) => sum + (item.total || 0), 0) || 0,
+      sumAmount: data.fx?.province?.reduce((sum: number, item: any) => sum + (item.sumAmount || 0), 0) || 0,
+      avgAmount: 0, // 后面计算
+      trend: Math.random() * 10 - 5, // 临时随机值，等后端提供
+      percentage: 0, // 后面计算
+
+      // 各维度分布数据（直接使用后端数据）
+      provinceData: data.fx?.province || [],
+      purposeData: data.fx?.purpose || [],
+      kindData: data.fx?.kind || [],
+      ageData: data.fx?.age || [],
+      kpiData: data.fx?.kpi || []
+    }
+
+    // // 计算平均金额
+    // atmData.avgAmount = atmData.totalTransactions > 0 ? atmData.totalAmount / atmData.totalTransactions : 0
+    // fxData.avgAmount = fxData.totalTransactions > 0 ? fxData.totalAmount / fxData.totalTransactions : 0
+
+    // // 计算百分比
+    // const totalTransactions = atmData.totalTransactions + fxData.totalTransactions
+    // if (totalTransactions > 0) {
+    //   atmData.percentage = Number(((atmData.totalTransactions / totalTransactions) * 100).toFixed(1))
+    //   fxData.percentage = Number(((fxData.totalTransactions / totalTransactions) * 100).toFixed(1))
+    // }
+
+    return { atm: atmData, fx: fxData }
+  } catch (error) {
+    console.error('后端数据获取失败:', error)
+    return null
+  }
+}
+
+/**
+ * 生命周期钩子
+ */
+onMounted(() => {
+  console.log('🚀 业务类型分布图表组件已挂载')
+
+  console.log('当前业务类型:', selectedBusinessType.value)
+  console.log('当前显示模式:', displayMode.value)
+
+  // 显示模拟数据信息
+  console.log('📊 ATM模拟数据概览:', {
+    totalTransactions: atmData.value.totalTransactions,
+    totalAmount: atmData.value.totalAmount,
+    provinceCount: atmData.value.provinceData.length,
+    amountLevels: atmData.value.amountDistribution.length,
+    provinces: atmData.value.provinceData.map(p => p.province),
+    amountLevels_detail: atmData.value.amountDistribution.map(a => a.amountLevel)
+  })
+
+  console.log('💱 FX模拟数据概览:', {
+    total: fxData.value.total,
+    sumAmount: fxData.value.sumAmount,
+    provinceCount: fxData.value.provinceData.length,
+    purposeCount: fxData.value.purposeData.length,
+    kindCount: fxData.value.kindData.length,
+    ageCount: fxData.value.ageData.length
+  })
+
+  // 初始化数据
+  refreshData()
+
+  // 设置自动刷新
+  if (props.autoRefresh && props.refreshInterval > 0) {
+    const interval = setInterval(() => {
+      refreshData()
+    }, props.refreshInterval)
+
+    // 组件卸载时清理定时器
+    onUnmounted(() => {
+      clearInterval(interval)
+    })
+  }
+})
+
+onUnmounted(() => {
+  console.log('🔄 业务类型分布图表组件开始卸载...')
+
+  // 重置状态
+  isLoading.value = false
+  selectedBusinessType.value = 'all'
+  displayMode.value = 'overview'
+
+  console.log('✅ 业务类型分布图表组件卸载完成')
+})
+
+/**
+ * 监听器
+ */
+watch(selectedBusinessType, (newType) => {
+  console.log('业务类型变更:', newType)
+  // 可以根据业务类型过滤数据
+})
+
+watch(displayMode, (newMode) => {
+  console.log('显示模式变更:', newMode)
+  // 可以根据显示模式调整图表配置
+})
+</script>
+
+<style scoped>
+.chart-container {
+  transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* 自定义滚动条样式 */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 图表容器动画 */
+.v-chart {
+  transition: opacity 0.3s ease;
+}
+
+/* 统计卡片悬停效果 */
+.bg-gradient-to-r:hover {
+  transform: translateY(-2px);
+  transition: transform 0.2s ease;
+}
+
+/* 业务类型标签样式 */
+.business-type-label {
+  position: relative;
+  overflow: hidden;
+}
+
+.business-type-label::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.business-type-label:hover::before {
+  left: 100%;
+}
+
+/* 🚀 总览模式专属动画效果 */
+
+/* 1. KPI卡片的呼吸和悬浮效果 */
+@keyframes overview-card-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.overview-kpi-card {
+  animation: overview-card-float 4s ease-in-out infinite;
+  background-size: 200% 200%;
+}
+
+/* 错开KPI卡片动画时间 */
+.overview-kpi-card:nth-child(1) { animation-delay: 0s; }
+.overview-kpi-card:nth-child(2) { animation-delay: 1s; }
+.overview-kpi-card:nth-child(3) { animation-delay: 2s; }
+.overview-kpi-card:nth-child(4) { animation-delay: 3s; }
+
+/* 2. 悬浮时的特殊效果 */
+.overview-kpi-card:hover {
+  animation-play-state: paused;
+  transform: translateY(-8px) scale(1.05) !important;
+}
+
+/* 3. 图标旋转效果 */
+@keyframes icon-rotate-subtle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(2deg); }
+  75% { transform: rotate(-2deg); }
+}
+
+.overview-kpi-card .w-12 {
+  animation: icon-rotate-subtle 4s ease-in-out infinite;
+}
+
+/* 4. 洞察卡片的轻微动画 */
+@keyframes insight-card-breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  }
+  50% {
+    transform: scale(1.01);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  }
+}
+
+/* 5. 排行榜项目的渐入动画 */
+@keyframes ranking-item-slide {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 6. 进度条动画 */
+@keyframes progress-fill {
+  0% { width: 0%; }
+  100% { width: 85%; }
+}
+
+.bg-gradient-to-r.from-blue-500.to-emerald-500 {
+  animation: progress-fill 2s ease-out 1s both;
+}
+
+/* 7. 减少动画偏好的用户 */
+@media (prefers-reduced-motion: reduce) {
+  .overview-kpi-card,
+  .overview-kpi-card .w-12 {
+    animation: none;
+  }
+}
+</style>

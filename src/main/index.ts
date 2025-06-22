@@ -6,26 +6,6 @@ import * as si from 'systeminformation'
 import axios from 'axios'
 import mysql from 'mysql2/promise'
 
-// 增强的日志工具 - 使用英文避免编码问题
-const logger = {
-  info: (message: string, data?: any) => {
-    const timestamp = new Date().toLocaleString()
-    console.log(`[INFO] [${timestamp}] ${message}`, data ? JSON.stringify(data, null, 2) : '')
-  },
-  success: (message: string, data?: any) => {
-    const timestamp = new Date().toLocaleString()
-    console.log(`[SUCCESS] [${timestamp}] ${message}`, data ? JSON.stringify(data, null, 2) : '')
-  },
-  error: (message: string, error?: any) => {
-    const timestamp = new Date().toLocaleString()
-    console.error(`[ERROR] [${timestamp}] ${message}`, error || '')
-  },
-  warn: (message: string, data?: any) => {
-    const timestamp = new Date().toLocaleString()
-    console.warn(`[WARN] [${timestamp}] ${message}`, data || '')
-  }
-}
-
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -91,7 +71,7 @@ app.whenReady().then(() => {
 
   // 数据获取 IPC 处理
   setupDataFetching()
-
+  
   createWindow()
 
   app.on('activate', function () {
@@ -250,7 +230,7 @@ function setupDataFetching(): void {
         case 'transaction':
         // 地域分布--交易金额
         case 'amount':
-          endpoint = '/Bank/atm/province/yesterday'
+          endpoint = '/Bank/atm_fx/province/p_c_m/yesterday'
           break
         // 地域分布--风险指数
         case 'risk':
@@ -271,6 +251,112 @@ function setupDataFetching(): void {
         success: false,
         data: [],
         message: error.message || '数据获取失败',
+        error: error.response?.data || error.message
+      }
+    }
+  })
+
+  // 获取业务类型分布数据
+  ipcMain.handle('fetch-business-data', async (_, params) => {
+    const { businessType = 'all', analysisType = 'overview' } = params || {}
+    try {
+      console.log('获取业务类型数据:', { businessType, analysisType })
+
+      // 根据业务类型和分析类型选择不同的API端点
+      const endpoints = {
+        // ATM相关接口
+        atm: {
+          overview: '/Bank/atm/overview/yesterday',
+          province: '/Bank/atm/province/yesterday',
+          amount: '/Bank/atm/amount/distribution/yesterday',
+          kpi: '/Bank/atm/kpi/yesterday'
+        },
+        // FX相关接口
+        fx: {
+          overview: '/Bank/fx/overview/yesterday',
+          province: '/Bank/fx/province/yesterday',
+          purpose: '/Bank/fx/purpose/yesterday',
+          kind: '/Bank/fx/kind/yesterday',
+          age: '/Bank/fx/age/yesterday',
+          kpi: '/Bank/fx/kpi/yesterday'
+        }
+      }
+
+      const results: any = {}
+
+      // 获取ATM数据
+      if (businessType === 'all' || businessType === 'atm') {
+        try {
+          // 使用endpoints对象获取ATM数据
+          // 使用并发请求
+          const[
+            atmOverviewResponse,
+            atmProvinceResponse,
+            atmAmountResponse,
+            atmKpiResponse
+          ] = await Promise.all([
+            axios.get(`${API_BASE_URL}${endpoints.atm.overview}`),
+            axios.get(`${API_BASE_URL}${endpoints.atm.province}`),
+            axios.get(`${API_BASE_URL}${endpoints.atm.amount}`),
+            axios.get(`${API_BASE_URL}${endpoints.atm.kpi}`)
+          ])
+          
+          results.atm = {
+            overview: atmOverviewResponse.data.data || atmOverviewResponse.data,
+            province: atmProvinceResponse.data.data || atmProvinceResponse.data,
+            amount: atmAmountResponse.data.data || atmAmountResponse.data,
+            kpi: atmKpiResponse.data.data || atmKpiResponse.data
+          }
+        } catch (error) {
+          console.warn('获取ATM数据失败:', error)
+          results.atm = { overview: [], province: [], amount: [], kpi: [] }
+        }
+      }
+
+      // 获取FX数据
+      if (businessType === 'all' || businessType === 'fx') {
+        try {
+          // 使用并发请求
+          // 使用endpoints对象获取FX数据
+          const[
+            fxProvinceResponse,
+            fxPurposeResponse,
+            fxKindResponse,
+            fxAgeResponse,
+            // fxKpiResponse
+          ] = await Promise.all([
+            axios.get(`${API_BASE_URL}${endpoints.fx.province}`),
+            axios.get(`${API_BASE_URL}${endpoints.fx.purpose}`),
+            axios.get(`${API_BASE_URL}${endpoints.fx.kind}`),
+            axios.get(`${API_BASE_URL}${endpoints.fx.age}`),
+            // axios.get(`${API_BASE_URL}${endpoints.fx.kpi}`)
+          ])
+        
+          results.fx = {
+            province: fxProvinceResponse.data.data || fxProvinceResponse.data,
+            purpose: fxPurposeResponse.data.data || fxPurposeResponse.data,
+            kind: fxKindResponse.data.data || fxKindResponse.data,
+            age: fxAgeResponse.data.data || fxAgeResponse.data,
+            // kpi: fxKpiResponse.data.data || fxKpiResponse.data
+          }
+        } catch (error) {
+          console.warn('获取FX数据失败:', error)
+          results.fx = { province: [], purpose: [], kind: [], age: [], kpi: [] }
+        }
+      }
+
+      return {
+        success: true,
+        data: results,
+        message: '业务数据获取成功',
+        timestamp: new Date().toISOString()
+      }
+    } catch (error: any) {
+      console.error('获取业务数据失败:', error)
+      return {
+        success: false,
+        data: {},
+        message: error.message || '业务数据获取失败',
         error: error.response?.data || error.message
       }
     }

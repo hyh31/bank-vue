@@ -24,6 +24,12 @@ interface DataFetchParams {
   dataType?: 'transaction' | 'amount' | 'risk'
 }
 
+// 业务数据获取参数接口
+interface BusinessDataParams {
+  businessType?: 'all' | 'atm' | 'fx'
+  analysisType?: 'overview' | 'detailed' | 'comparison'
+}
+
 // API响应接口
 interface ApiResponse<T = any> {
   success: boolean
@@ -42,7 +48,9 @@ const api = {
   // 数据获取API
   fetchData: () => ipcRenderer.invoke('fetchData'),
   fetchRegionData: (params?: DataFetchParams): Promise<ApiResponse> =>
-    ipcRenderer.invoke('fetch-region-data', params)
+    ipcRenderer.invoke('fetch-region-data', params),
+  fetchBusinessData: (params?: BusinessDataParams): Promise<ApiResponse> =>
+    ipcRenderer.invoke('fetch-business-data', params)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

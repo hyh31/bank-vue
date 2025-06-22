@@ -11,16 +11,17 @@
           <!-- 时间范围选择器 -->
           <div class="flex items-center space-x-2">
             <Clock class="w-4 h-4 text-muted-foreground" />
-            <select
-              v-model="selectedTimeRange"
-              class="text-sm border rounded-md px-3 py-1 bg-background"
-              @change="handleTimeRangeChange"
-            >
-              <option value="24h">24小时</option>
-              <option value="7d">7天</option>
-              <option value="30d">30天</option>
-              <option value="90d">90天</option>
-            </select>
+            <Select v-model="selectedTimeRange" @update:model-value="handleTimeRangeChange">
+              <SelectTrigger class="w-fit text-sm border rounded-md px-3 py-1 bg-background" size="sm">
+                <SelectValue placeholder="选择时间范围" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="24h">24小时</SelectItem>
+                <SelectItem value="7d">7天</SelectItem>
+                <SelectItem value="30d">30天</SelectItem>
+                <SelectItem value="90d">90天</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <!-- 刷新按钮 -->
@@ -203,12 +204,12 @@
               </Badge>
             </div>
           </CardHeader>
-          <CardContent class="h-full pb-6">
+          <CardContent class="h-full">
             <!-- 使用shadcn组件集成ECharts图表 -->
             <BusinessTypeChart
               title=""
               subtitle=""
-              chart-height="480px"
+              chart-height="calc(100vh - 360px)"
               :auto-refresh="true"
               :refresh-interval="120000"
             />
@@ -263,6 +264,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 // 导入专门的图表组件
 import TransactionTrendChart from '@/components/charts/TransactionTrendChart.vue'
