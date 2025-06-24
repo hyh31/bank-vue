@@ -7,14 +7,20 @@ import type { ATMData, FXData } from './types'
 /**
  * 格式化数字，添加千分位分隔符
  */
-export const formatNumber = (value: number): string => {
+export const formatNumber = (value: number | undefined | null): string => {
+  if (value === undefined || value === null || isNaN(value)) {
+    return '0'
+  }
   return value.toLocaleString()
 }
 
 /**
  * 格式化货币，转换为万元单位
  */
-export const formatCurrency = (value: number): string => {
+export const formatCurrency = (value: number | undefined | null): string => {
+  if (value === undefined || value === null || isNaN(value)) {
+    return '¥0.0万'
+  }
   return `¥${(value / 10000).toFixed(1)}万`
 }
 

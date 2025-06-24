@@ -56,13 +56,17 @@
       <!-- 总览模式 -->
       <OverviewMode
         v-else-if="displayMode === 'overview'"
+        ref="overviewModeRef"
         :atm-data="atmData"
         :fx-data="fxData"
+        :overview-data="overviewData"
+        :selected-business-type="selectedBusinessType"
       />
 
       <!-- 详细分析模式 -->
       <DetailedMode
         v-else-if="displayMode === 'detailed'"
+        ref="detailedModeRef"
         :atm-data="atmData"
         :fx-data="fxData"
         :selected-business-type="selectedBusinessType"
@@ -71,24 +75,17 @@
       <!-- 对比分析模式 -->
       <ComparisonMode
         v-else
+        ref="comparisonModeRef"
         :atm-data="atmData"
         :fx-data="fxData"
         :selected-business-type="selectedBusinessType"
       />
     </div>
-
-    <!-- 数据统计卡片 - 紧凑布局 (在FX专项模式下隐藏) -->
-    <KPICards
-      v-if="!(selectedBusinessType === 'fx' && (displayMode === 'detailed' || displayMode === 'comparison'))"
-      :atm-data="atmData"
-      :fx-data="fxData"
-      class="mt-3"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -106,10 +103,18 @@ import {
 import OverviewMode from './business-type/OverviewMode.vue'
 import DetailedMode from './business-type/DetailedMode.vue'
 import ComparisonMode from './business-type/ComparisonMode.vue'
-import KPICards from './business-type/KPICards.vue'
 
 // 导入类型和工具函数
-import type { Props, ATMData, FXData, BusinessType, DisplayMode, BackendDataResponse, FetchDataParams } from './business-type/types'
+import type {
+  Props,
+  ATMData,
+  FXData,
+  BusinessType,
+  DisplayMode,
+  BackendDataResponse,
+  OverviewDataResponse,
+  FetchDataParams,
+} from './business-type/types'
 
 // 注册ECharts组件
 use([
@@ -142,6 +147,15 @@ const displayMode = ref<DisplayMode>('overview')
 const isLoading = ref(false)
 const chartContainer = ref<HTMLElement | null>(null)
 
+// 子组件引用
+const overviewModeRef = ref<InstanceType<typeof OverviewMode> | null>(null)
+const detailedModeRef = ref<InstanceType<typeof DetailedMode> | null>(null)
+const comparisonModeRef = ref<InstanceType<typeof ComparisonMode> | null>(null)
+
+// 记录上一次的值，用于避免重复刷新
+const previousBusinessType = ref<BusinessType>('all')
+const previousDisplayMode = ref<DisplayMode>('overview')
+
 // ATM业务数据 - 使用丰富的模拟数据展示详细分析效果
 const atmData = ref<ATMData>({
   totalTransactions: 18650,
@@ -172,42 +186,22 @@ const atmData = ref<ATMData>({
   kpiData: []
 })
 
-// FX外汇业务数据 - 使用模拟数据（与ATM数据保持一致的比例）
+// FX外汇业务数据 - 从IPC接口获取
 const fxData = ref<FXData>({
-  total: 7150,
-  sumAmount: 168400000,
-  avgAmount: 23550,
-  percentage: 27.7,
-  trend: 4.2,
-  provinceData: [
-    { province: '北京', total: 1350, sum_amount: 31800000 },
-    { province: '上海', total: 1250, sum_amount: 29400000 },
-    { province: '广东', total: 1580, sum_amount: 37200000 },
-    { province: '江苏', total: 920, sum_amount: 21600000 },
-    { province: '浙江', total: 850, sum_amount: 20000000 },
-    { province: '山东', total: 680, sum_amount: 16000000 },
-    { province: '四川', total: 520, sum_amount: 12400000 }
-  ],
-  purposeData: [
-    { purpose: '旅游', total: 2860 },
-    { purpose: '投资', total: 2145 },
-    { purpose: '留学', total: 1430 },
-    { purpose: '商务', total: 715 }
-  ],
-  kindData: [
-    { kind: 'USD', total: 3220 },
-    { kind: 'EUR', total: 1820 },
-    { kind: 'JPY', total: 1215 },
-    { kind: 'GBP', total: 895 }
-  ],
-  ageData: [
-    { ageLevel: '18-30', total: 2145 },
-    { ageLevel: '31-45', total: 3220 },
-    { ageLevel: '46-60', total: 1430 },
-    { ageLevel: '60+', total: 355 }
-  ],
+  total: 0,
+  sumAmount: 0,
+  avgAmount: 0,
+  percentage: 0,
+  trend: 0,
+  provinceData: [],
+  purposeData: [],
+  kindData: [],
+  ageData: [],
   kpiData: []
 })
+
+// 总览模式数据 - 从总览数据接口获取
+const overviewData = ref<OverviewDataResponse | undefined>(undefined)
 
 /**
  * 计算属性
@@ -217,18 +211,72 @@ const chartContainerStyle = computed(() => ({
 }))
 
 /**
+ * ECharts实例安全操作函数
+ */
+const safeEChartsOperation = (callback: () => void) => {
+  try {
+    callback()
+  } catch (error) {
+    console.warn('ECharts操作失败:', error)
+  }
+}
+
+/**
+ * 清理子组件中的ECharts实例
+ */
+const cleanupChildCharts = () => {
+  safeEChartsOperation(() => {
+    // 清理总览模式的图表
+    if (overviewModeRef.value && (overviewModeRef.value as any).cleanup) {
+      (overviewModeRef.value as any).cleanup()
+    }
+
+    // 清理详细分析模式的图表
+    if (detailedModeRef.value && (detailedModeRef.value as any).cleanup) {
+      (detailedModeRef.value as any).cleanup()
+    }
+
+    // 清理对比分析模式的图表
+    if (comparisonModeRef.value && (comparisonModeRef.value as any).cleanup) {
+      (comparisonModeRef.value as any).cleanup()
+    }
+  })
+}
+
+/**
  * 事件处理函数
  */
-const handleBusinessTypeChange = () => {
-  console.log('业务类型切换为:', selectedBusinessType.value)
-  refreshData()
+const handleBusinessTypeChange = async (newValue: any) => {
+  console.log('业务类型切换为:', newValue, '上一次:', previousBusinessType.value)
+
+  // 只有真正改变时才刷新数据
+  if (newValue && newValue !== previousBusinessType.value) {
+    console.log('业务类型已切换，开始刷新数据')
+    previousBusinessType.value = newValue
+
+    cleanupChildCharts()
+    await nextTick()
+    refreshData()
+  } else {
+    console.log('业务类型未变化，跳过刷新')
+  }
 }
 
-const handleDisplayModeChange = () => {
-  console.log('显示模式切换为:', displayMode.value)
+const handleDisplayModeChange = async (newValue: any) => {
+  console.log('显示模式切换为:', newValue, '上一次:', previousDisplayMode.value)
+
+  // 只有真正改变时才刷新数据
+  if (newValue && newValue !== previousDisplayMode.value) {
+    console.log('显示模式已切换，开始刷新数据')
+    previousDisplayMode.value = newValue
+
+    cleanupChildCharts()
+    await nextTick()
+    refreshData()
+  } else {
+    console.log('显示模式未变化，跳过刷新')
+  }
 }
-
-
 
 const refreshData = async () => {
   if (isLoading.value) return
@@ -237,36 +285,102 @@ const refreshData = async () => {
   console.log('正在刷新业务类型数据...')
 
   try {
-    // // 临时使用模拟数据来展示ATM详细分析效果
-    // console.log('🎯 使用模拟数据展示ATM业务详细分析')
 
-    // // 保持当前的模拟数据不变，确保图表能正常显示
-    // console.log('ATM模拟数据:', {
-    //   totalTransactions: atmData.value.totalTransactions,
-    //   provinceCount: atmData.value.provinceData.length,
-    //   amountLevels: atmData.value.amountDistribution.length
-    // })
-
-    //如果需要后端数据，可以取消下面的注释
-    const backendData = await fetchBusinessDataFromBackend()
-    if (backendData) {
-      atmData.value = backendData.atm
-      fxData.value = backendData.fx
+    if (displayMode.value === 'detailed') {
+      // 详细分析和对比分析模式：直接使用IPC接口
+      console.log('🎯 详细模式使用后端数据')
+      const backendData = await fetchBusinessDataFromBackend()
+      if (backendData) {
+        atmData.value = backendData.atm
+        fxData.value = backendData.fx
+        console.log('✅ 详细数据获取成功')
+      }
+    } else if (displayMode.value === 'overview') {
+      // 总览模式：使用专用的总览数据接口
+      console.log('🎯 总览模式使用总览数据接口')
+      const fetchedOverviewData = await fetchOverviewDataFromBackend()
+      if (fetchedOverviewData) {
+        // 处理总览数据并更新组件状态
+        overviewData.value = fetchedOverviewData
+        console.log('✅ 总览数据获取成功', fetchedOverviewData)
+      }
     }
-
-    console.log('✅ 业务类型数据刷新完成（使用模拟数据）')
+    
+    console.log('✅ 业务类型数据刷新完成')
   } catch (error) {
     console.error('数据刷新失败:', error)
-    // 失败时保持模拟数据
+    // 失败时保持现有数据
   } finally {
     isLoading.value = false
   }
 }
 
 /**
- * 后端数据获取函数
+ * 总览数据获取函数
  */
-const fetchBusinessDataFromBackend = async (): Promise<BackendDataResponse | null> => {
+const fetchOverviewDataFromBackend = async (): Promise<OverviewDataResponse | undefined> => {
+  try {
+    console.log('正在从后端获取总览数据...', {
+      businessType: selectedBusinessType.value,
+      displayMode: displayMode.value
+    })
+
+    // 调用主进程的IPC接口获取总览数据
+    const response = await (window.api as any).fetchOverviewData({
+      businessType: selectedBusinessType.value,
+      timeRange: 'week'
+    })
+    console.log('后端返回的总览数据:', response)
+
+    const data = response.data
+
+    // 构建符合OverviewDataResponse接口的数据结构
+    const overviewResult: OverviewDataResponse = {}
+
+    // 处理外汇业务数据
+    if (selectedBusinessType.value === 'fx' && data.fx) {
+      overviewResult.fx = {
+        summary: {
+          total: data.fx.summary?.total || 0,
+          sumAmount: data.fx.summary?.sumAmount || 0,
+          trend: data.fx.summary?.trend || 0,
+        },
+        weeklyComparison: data.fx.weeklyComparison || { thisWeek: 0, lastWeek: 0, percentage: 0, dailyData: [] },
+        topProvinces: data.fx.topProvinces || [],
+        quickInsights: data.fx.quickInsights || []
+      }
+    }
+
+    // 处理ATM业务数据
+    if (selectedBusinessType.value === 'atm' && data.atm) {
+      overviewResult.atm = {
+        summary: {
+          total: data.atm.summary?.total || 0,
+          sumAmount: data.atm.summary?.sumAmount || 0,
+          trend: data.atm.summary?.trend || 0,
+        },
+        weeklyComparison: data.atm.weeklyComparison || { thisWeek: 0, lastWeek: 0, percentage: 0, dailyData: [] },
+        topProvinces: data.atm.topProvinces || [],
+        quickInsights: data.atm.quickInsights || []
+      }
+    }
+
+    // 处理综合业务数据
+    if (selectedBusinessType.value === 'all' && data.dashboard) {
+      overviewResult.dashboard = data.dashboard
+    }
+
+    return overviewResult
+  } catch (error) {
+    console.error('总览数据获取失败:', error)
+    return undefined
+  }
+}
+
+/**
+ * 详细数据获取函数（保持原有逻辑）
+ */
+const fetchBusinessDataFromBackend = async (): Promise<BackendDataResponse | undefined> => {
   try {
     console.log('正在从后端获取业务类型数据...', {
       businessType: selectedBusinessType.value,
@@ -282,46 +396,73 @@ const fetchBusinessDataFromBackend = async (): Promise<BackendDataResponse | nul
 
     const data = response.data
 
-    // 处理ATM数据
-    const atmData: ATMData = {
-      // 计算总体指标
-      totalTransactions: data.atm?.province?.reduce((sum: number, item: any) => sum + (item.transcation_times || 0), 0) || 0,
-      totalAmount: data.atm?.province?.reduce((sum: number, item: any) => sum + (item.sum_amount || 0), 0) || 0,
-      avgAmount: 0, // 后面计算
-      trend: Math.random() * 10 - 5, // 临时随机值，等后端提供
-      percentage: 0, // 后面计算
-
-      // 省份分布数据（直接使用后端数据）
-      provinceData: data.atm?.province || [],
-
-      // 金额分布数据（直接使用后端数据）
-      amountDistribution: data.atm?.amount || [],
-
-      // KPI数据（直接使用后端数据）
-      kpiData: data.atm?.kpi || []
+    // 创建默认的空数据
+    const defaultATMData: ATMData = {
+      totalTransactions: 0,
+      totalAmount: 0,
+      avgAmount: 0,
+      percentage: 0,
+      trend: 0,
+      provinceData: [],
+      amountDistribution: [],
+      kpiData: []
     }
 
-    // 处理FX数据
-    const fxData: FXData = {
-      // 计算总体指标
-      total: data.fx?.province?.reduce((sum: number, item: any) => sum + (item.total || 0), 0) || 0,
-      sumAmount: data.fx?.province?.reduce((sum: number, item: any) => sum + (item.sumAmount || 0), 0) || 0,
-      avgAmount: 0, // 后面计算
-      trend: Math.random() * 10 - 5, // 临时随机值，等后端提供
-      percentage: 0, // 后面计算
-
-      // 各维度分布数据（直接使用后端数据）
-      provinceData: data.fx?.province || [],
-      purposeData: data.fx?.purpose || [],
-      kindData: data.fx?.kind || [],
-      ageData: data.fx?.age || [],
-      kpiData: data.fx?.kpi || []
+    const defaultFXData: FXData = {
+      total: 0,
+      sumAmount: 0,
+      avgAmount: 0,
+      percentage: 0,
+      trend: 0,
+      provinceData: [],
+      purposeData: [],
+      kindData: [],
+      ageData: [],
+      kpiData: []
     }
 
-    return { atm: atmData, fx: fxData }
+    const result: BackendDataResponse = {
+      atm: defaultATMData,
+      fx: defaultFXData
+    }
+
+    // 根据业务的选择类型处理数据
+    if (selectedBusinessType.value === 'atm' || selectedBusinessType.value === 'all') {
+      result.atm = {
+        // 优先使用overview数据，后备使用province数据计算
+        totalTransactions: data.atm?.province?.reduce((sum: number, item: any) => sum + (item.transcation_times || 0), 0) || 0,
+        totalAmount: data.atm?.province?.reduce((sum: number, item: any) => sum + (item.sum_amount || 0), 0) || 0,
+        avgAmount: 0, // 优先使用后端平均金额
+        trend: Math.random() * 10 - 5, // 优先使用后端趋势数据
+        percentage: 0, // 后面计算
+
+        provinceData: data.atm?.province || [],
+        amountDistribution: data.atm?.amount || [],
+        kpiData: data.atm?.kpi || []
+      }
+    }
+
+    if (selectedBusinessType.value === 'fx' || selectedBusinessType.value === 'all') {
+      result.fx = {
+        total: data.fx?.province?.reduce((sum: number, item: any) => sum + (item.total || 0), 0) || 0,
+        sumAmount: data.fx?.province?.reduce((sum: number, item: any) => sum + (item.sumAmount || 0), 0) || 0,
+        trend: Math.random() * 10 - 5, // 优先使用后端趋势数据
+        avgAmount: 0, // 优先使用后端平均金额
+        percentage: 0, // 后面计算
+
+        // 各维度分布数据（直接使用后端数据）
+        provinceData: data.fx?.province || [],
+        purposeData: data.fx?.purpose || [],
+        kindData: data.fx?.kind || [],
+        ageData: data.fx?.age || [],
+        kpiData: data.fx?.kpi || []
+      }
+    }
+
+    return result
   } catch (error) {
     console.error('后端数据获取失败:', error)
-    return null
+    return undefined
   }
 }
 
@@ -329,6 +470,9 @@ const fetchBusinessDataFromBackend = async (): Promise<BackendDataResponse | nul
  * 生命周期钩子
  */
 onMounted(() => {
+  // 初始化记录的值
+  previousBusinessType.value = selectedBusinessType.value
+  previousDisplayMode.value = displayMode.value
 
   // 初始化数据
   refreshData()
@@ -346,28 +490,17 @@ onMounted(() => {
   }
 })
 
-onUnmounted(() => {
-  console.log('🔄 业务类型分布图表组件开始卸载...')
+// 组件卸载前清理ECharts实例
+onBeforeUnmount(() => {
+  // 清理所有子组件的ECharts实例
+  cleanupChildCharts()
+})
 
+onUnmounted(() => {
   // 重置状态
   isLoading.value = false
   selectedBusinessType.value = 'all'
   displayMode.value = 'overview'
-
-  console.log('✅ 业务类型分布图表组件卸载完成')
-})
-
-/**
- * 监听器
- */
-watch(selectedBusinessType, (newType) => {
-  console.log('业务类型变更:', newType)
-  // 可以根据业务类型过滤数据
-})
-
-watch(displayMode, (newMode) => {
-  console.log('显示模式变更:', newMode)
-  // 可以根据显示模式调整图表配置
 })
 </script>
 

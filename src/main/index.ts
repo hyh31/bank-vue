@@ -293,19 +293,19 @@ function setupDataFetching(): void {
             atmOverviewResponse,
             atmProvinceResponse,
             atmAmountResponse,
-            atmKpiResponse
-          ] = await Promise.all([
+            // atmKpiResponse
+          ] = await Promise.allSettled([
             axios.get(`${API_BASE_URL}${endpoints.atm.overview}`),
             axios.get(`${API_BASE_URL}${endpoints.atm.province}`),
             axios.get(`${API_BASE_URL}${endpoints.atm.amount}`),
-            axios.get(`${API_BASE_URL}${endpoints.atm.kpi}`)
+            // axios.get(`${API_BASE_URL}${endpoints.atm.kpi}`)
           ])
           
           results.atm = {
-            overview: atmOverviewResponse.data.data || atmOverviewResponse.data,
-            province: atmProvinceResponse.data.data || atmProvinceResponse.data,
-            amount: atmAmountResponse.data.data || atmAmountResponse.data,
-            kpi: atmKpiResponse.data.data || atmKpiResponse.data
+            overview: atmOverviewResponse.status ==='fulfilled' ? atmOverviewResponse.value.data.data: [],
+            province: atmProvinceResponse.status ==='fulfilled' ? atmProvinceResponse.value.data.data: [],
+            amount: atmAmountResponse.status ==='fulfilled' ? atmAmountResponse.value.data.data: [],
+            // kpi: atmKpiResponse.data.data || atmKpiResponse.data
           }
         } catch (error) {
           console.warn('获取ATM数据失败:', error)
@@ -318,30 +318,25 @@ function setupDataFetching(): void {
         try {
           // 使用并发请求
           // 使用endpoints对象获取FX数据
-          const[
-            fxProvinceResponse,
-            fxPurposeResponse,
-            fxKindResponse,
-            fxAgeResponse,
-            // fxKpiResponse
-          ] = await Promise.all([
+          // 并发请求，部分失败不影响其他
+          const fxresults = await Promise.allSettled([
             axios.get(`${API_BASE_URL}${endpoints.fx.province}`),
             axios.get(`${API_BASE_URL}${endpoints.fx.purpose}`),
             axios.get(`${API_BASE_URL}${endpoints.fx.kind}`),
-            axios.get(`${API_BASE_URL}${endpoints.fx.age}`),
-            // axios.get(`${API_BASE_URL}${endpoints.fx.kpi}`)
+            axios.get(`${API_BASE_URL}${endpoints.fx.age}`)
           ])
-        
+
+          // 安全地提取数据
+          const [provinceResult, purposeResult, kindResult, ageResult] = fxresults
           results.fx = {
-            province: fxProvinceResponse.data.data || fxProvinceResponse.data,
-            purpose: fxPurposeResponse.data.data || fxPurposeResponse.data,
-            kind: fxKindResponse.data.data || fxKindResponse.data,
-            age: fxAgeResponse.data.data || fxAgeResponse.data,
-            // kpi: fxKpiResponse.data.data || fxKpiResponse.data
+            province: provinceResult.status === 'fulfilled' ? provinceResult.value.data.data : [],
+            purpose: purposeResult.status === 'fulfilled' ? purposeResult.value.data.data : [],
+            kind: kindResult.status === 'fulfilled' ? kindResult.value.data.data : [],
+            age: ageResult.status === 'fulfilled' ? ageResult.value.data.data : []
           }
         } catch (error) {
           console.warn('获取FX数据失败:', error)
-          results.fx = { province: [], purpose: [], kind: [], age: [], kpi: [] }
+          results.fx = { province: [], purpose: [], kind: [], age: [] }
         }
       }
 
@@ -357,6 +352,60 @@ function setupDataFetching(): void {
         success: false,
         data: {},
         message: error.message || '业务数据获取失败',
+        error: error.response?.data || error.message
+      }
+    }
+  })
+
+  // 获取总览数据
+  ipcMain.handle('fetch-overview-data', async (_, params) => {
+    const { businessType = 'all', timeRange = 'week' } = params || {}
+    try {
+      console.log('获取总览数据:', { businessType, timeRange })
+
+      // 根据业务类型选择不同的API端点
+      const result: any = {}
+
+      const endpoints = {
+        atm: '/Bank/atm/overview/yesterday',
+        fx: '/Bank/fx/overview/yesterday',
+        all: '/Bank/overview/dashboard'
+      }
+
+      // 获取ATM总览数据
+      if (businessType === 'atm' || businessType === 'all') {
+        try {
+          const response = await axios.get(`${API_BASE_URL}${endpoints.atm}`)
+          result.atm = response.data.data || response.data
+        } catch(error) {
+          console.warn('获取ATM总览数据失败:', error)
+          result.atm = {}
+        }
+      }
+      
+      // 获取Fx总览数据
+      if (businessType === 'fx' || businessType === 'all') {
+        try {
+          const response = await axios.get(`${API_BASE_URL}${endpoints.fx}`)
+          result.fx = response.data.data || response.data
+        } catch(error) {
+          console.warn('获取FX总览数据失败:', error)
+          result.fx = {}
+        }
+      }
+      return {
+        success: true,
+        data: result,
+        message: '总览数据获取成功',
+        timestamp: new Date().toISOString()
+      }
+
+    } catch (error: any) {
+      console.error('获取总览数据失败:', error)
+      return {
+        success: false,
+        data: {},
+        message: error.message || '总览数据获取失败',
         error: error.response?.data || error.message
       }
     }

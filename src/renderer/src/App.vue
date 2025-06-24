@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, nextTick, onBeforeUnmount } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import Dashboard from '@/components/Dashboard.vue'
 import DataVisualizationDashboard from '@/components/DataVisualizationDashboard.vue'
@@ -16,22 +16,62 @@ type ViewType = 'dashboard' | 'data-visualization'
 const currentView = ref<ViewType>('dashboard')
 
 /**
- * 切换视图 - 简化版本
- * @param view 目标视图类型
+ * 组件引用
  */
-const switchView = (view: string) => {
-  console.log('🔄 切换视图:', view)
+const dashboardRef = ref<InstanceType<typeof Dashboard> | null>(null)
+const dataVisualizationRef = ref<InstanceType<typeof DataVisualizationDashboard> | null>(null)
+
+/**
+ * ECharts实例安全操作函数
+ */
+const safeEChartsOperation = (callback: () => void) => {
+  try {
+    callback()
+  } catch (error) {
+    console.warn('ECharts操作失败:', error)
+  }
+}
+
+/**
+ * 清理当前视图中的ECharts实例
+ */
+const cleanupCurrentViewCharts = () => {
+  safeEChartsOperation(() => {
+    // 清理仪表盘中的图表
+    if (dashboardRef.value && (dashboardRef.value as any).cleanup) {
+      (dashboardRef.value as any).cleanup()
+    }
+
+    // 清理数据可视化中的图表
+    if (dataVisualizationRef.value && (dataVisualizationRef.value as any).cleanup) {
+      (dataVisualizationRef.value as any).cleanup()
+    }
+  })
+}
+
+// 切换视图
+const switchView = async (view: string) => {
 
   // 类型检查
   if (view !== 'dashboard' && view !== 'data-visualization') {
-    console.error('❌ 无效的视图类型:', view)
+    console.error('无效的视图类型:', view)
     return
   }
 
-  // 直接切换，不使用复杂的异步逻辑
+  cleanupCurrentViewCharts()
+
+  await nextTick()
+
+  // 切换视图
   currentView.value = view as ViewType
-  console.log('✅ 视图已切换到:', view)
+  console.log('视图已切换到:', view)
 }
+
+// 组件卸载前清理ECharts实例
+onBeforeUnmount(() => {
+  // 清理所有视图的ECharts实例
+  cleanupCurrentViewCharts()
+})
 </script>
 
 <template>
@@ -39,10 +79,10 @@ const switchView = (view: string) => {
     <AppSidebar :current-view="currentView" @view-change="switchView" />
     <SidebarInset>
       <!-- 银行监控告警系统主仪表盘 -->
-      <Dashboard v-if="currentView === 'dashboard'" />
+      <Dashboard v-if="currentView === 'dashboard'" ref="dashboardRef" />
 
       <!-- 数据可视化页面 -->
-      <DataVisualizationDashboard v-else-if="currentView === 'data-visualization'" />
+      <DataVisualizationDashboard v-else-if="currentView === 'data-visualization'" ref="dataVisualizationRef" />
     </SidebarInset>
   </SidebarProvider>
 </template>
