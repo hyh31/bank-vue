@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { ref, nextTick, onBeforeUnmount } from 'vue'
+import { ref, nextTick, onBeforeUnmount, onBeforeMount } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import Dashboard from '@/components/Dashboard.vue'
 import DataVisualizationDashboard from '@/components/DataVisualizationDashboard.vue'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { fixElectrionAPI } from '@shared/handlers/fixElectronAPI'
+
+onBeforeMount(() => {
+  fixElectrionAPI()
+})
 
 /**
  * 当前活动视图类型

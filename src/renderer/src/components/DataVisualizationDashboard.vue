@@ -243,6 +243,29 @@
           </CardContent>
         </Card>
       </div>
+
+      <!-- IPC 测试模块 -->
+      <div v-else-if="currentModule === 'ipc-test'" class="h-full">
+        <Card class="h-full hover:shadow-lg transition-shadow duration-300 gap-0">
+          <CardHeader class="pb-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <CardTitle class="text-xl font-bold flex items-center">
+                  <Settings class="w-6 h-6 mr-3 text-purple-500" />
+                  IPC 通信测试
+                </CardTitle>
+                <p class="text-sm text-muted-foreground mt-1">测试前后端数据接口通信状态</p>
+              </div>
+              <Badge variant="outline" class="text-xs">
+                调试工具
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent class="h-full">
+            <IPCTest />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   </div>
 </template>
@@ -257,7 +280,8 @@ import {
   Clock,
   Target,
   Activity,
-  Shield
+  Shield,
+  Settings
 } from 'lucide-vue-next'
 
 // shadcn-vue 组件导入
@@ -272,6 +296,7 @@ import RiskDistributionChart from '@/components/charts/RiskDistributionChart.vue
 import RegionDistributionChart from '@/components/charts/RegionDistributionChart.vue'
 import BusinessTypeChart from '@/components/charts/BusinessTypeChart.vue'
 import RealtimeDataStream from '@/components/charts/RealtimeDataStream.vue'
+import IPCTest from '@/components/test/IPCTest.vue'
 
 // 导入性能监控工具
 import { performanceMonitor } from '@/utils/performance'
@@ -332,6 +357,12 @@ const visualizationModules = ref<VisualizationModule[]>([
     name: '实时数据',
     icon: Activity,
     description: '系统性能实时监控'
+  },
+  {
+    id: 'ipc-test',
+    name: 'API测试',
+    icon: Settings,
+    description: 'IPC通信接口测试'
   }
 ])
 

@@ -1,10 +1,10 @@
-# 银行告警监控系统
+# 银行业务监控分析系统
 
-一个基于 Electron + Vue 3 + TypeScript 的现代化银行告警监控系统，提供实时告警监控、地域分布统计、系统状态监控和交易数据管理等功能。
+一个基于 Electron + Vue 3 + TypeScript 的现代化银行业务监控分析系统，提供实时告警监控、业务数据分析、地域分布统计、系统状态监控等功能。支持ATM和外汇(FX)业务的多维度数据分析和可视化展示。
 
 ## 🎯 项目概述
 
-本系统专为银行业务监控设计，提供直观的仪表板界面，实时展示关键业务指标、安全告警和系统状态。采用现代化的技术栈和响应式设计，确保在不同分辨率下都能提供最佳的用户体验。
+本系统专为银行业务监控和数据分析设计，提供直观的仪表板界面和专业的业务分析功能。系统支持多种业务类型的独立监控，包括ATM业务和外汇业务，提供总览模式、详细分析和对比分析三种显示模式。采用现代化的技术栈和响应式设计，确保在不同分辨率下都能提供最佳的用户体验。
 
 ## ✨ 核心功能
 
@@ -34,6 +34,34 @@
 - **自动状态判断**：根据使用率自动判断正常/警告/严重状态
 - **定时刷新**：每10秒自动更新系统状态数据
 
+### 📋 业务类型分析
+- **多业务支持**：ATM业务和外汇(FX)业务独立监控
+- **三种显示模式**：总览模式、详细分析、对比分析
+- **智能数据聚合**：自动计算汇总指标和趋势分析
+- **省份分布统计**：可视化展示各省份业务分布情况
+
+#### 🏦 ATM业务监控
+- **交易量统计**：实时统计ATM交易笔数和金额
+- **省份分布**：展示各省份ATM交易分布情况
+- **金额区间分析**：按交易金额区间进行统计分析
+- **KPI指标监控**：关键性能指标实时监控
+
+#### 💱 外汇业务监控
+- **外汇交易统计**：外汇业务交易量和金额统计
+- **交易目的分析**：按交易目的（旅游、投资、留学等）分类
+- **币种分布**：不同币种的交易量分布统计
+- **年龄段分析**：按客户年龄段进行业务分析
+- **近一周趋势分析**：7天交易量趋势图表，包含历史数据和预测数据
+
+#### 📊 总览模式功能
+- **核心KPI展示**：交易量、交易金额、趋势变化百分比
+- **周对比分析**：本周与上周数据对比，自动计算增长趋势
+- **活跃省份统计**：展示业务活跃的省份数量
+- **近一周业务趋势**：7天趋势可视化（6天历史数据 + 1天预测数据）
+- **智能预测算法**：基于历史数据的简单预测模型
+- **实时数据更新**：支持手动刷新和自动更新
+- **响应式图表**：现代化ECharts图表，支持交互和动画
+
 ### 📋 交易监控数据
 - **完整交易信息**：ID、账户、金额、类型、状态等
 - **风险等级标识**：高、中、低风险分级显示
@@ -48,15 +76,29 @@
 - **TypeScript**: 类型安全的JavaScript超集
 - **Vite**: 现代化构建工具
 
+### 后端技术栈
+- **Spring Boot**: Java企业级应用框架
+- **MyBatis**: 持久层框架，支持SQL映射和XML配置
+- **MySQL**: 关系型数据库，存储业务数据
+- **Maven**: 项目构建和依赖管理工具
+
 ### UI组件库
 - **shadcn-vue**: 现代化UI组件库
 - **Tailwind CSS**: 实用优先的CSS框架
 - **Lucide Vue**: 精美的图标库
+- **ECharts**: 专业的数据可视化图表库
+- **Vue ECharts**: Vue 3的ECharts集成组件
+
+### 数据可视化
+- **ECharts**: 专业的数据可视化图表库
+- **Vue ECharts**: Vue 3的ECharts集成组件
+- **自定义图表**: 趋势图、分布图、对比图
 
 ### 开发工具
 - **Electron Vite**: Electron应用的Vite集成
 - **ESLint**: 代码质量检查
 - **Prettier**: 代码格式化
+- **TypeScript**: 完整的类型定义和检查
 
 ## 🚀 快速开始
 
@@ -128,15 +170,37 @@ npm run build:linux
 electron-app/
 ├── src/
 │   ├── main/                 # 主进程代码
+│   │   └── index.ts          # 主进程入口，包含IPC处理器
 │   ├── preload/              # 预加载脚本
+│   │   ├── index.ts          # 预加载脚本，定义API接口
+│   │   └── index.d.ts        # TypeScript类型定义
 │   └── renderer/             # 渲染进程代码
 │       ├── src/
 │       │   ├── components/   # Vue组件
 │       │   │   ├── ui/       # UI基础组件
-│       │   │   └── Dashboard.vue  # 主仪表板组件
+│       │   │   ├── charts/   # 图表组件
+│       │   │   │   ├── BusinessTypeChart.vue  # 业务类型分析主组件
+│       │   │   │   └── business-type/         # 业务类型子组件
+│       │   │   │       ├── OverviewMode.vue   # 总览模式组件
+│       │   │   │       ├── DetailedMode.vue   # 详细分析组件
+│       │   │   │       ├── ComparisonMode.vue # 对比分析组件
+│       │   │   │       ├── types.ts           # 类型定义
+│       │   │   │       └── utils.ts           # 工具函数
+│       │   │   └── Dashboard.vue              # 主仪表板组件
 │       │   ├── assets/       # 静态资源
+│       │   ├── env.d.ts      # 全局类型定义
 │       │   └── main.ts       # 入口文件
 │       └── index.html        # HTML模板
+├── backend-reference/        # 后端参考代码
+│   ├── FXOverviewController.java    # FX总览控制器
+│   ├── FXOverviewService.java       # FX总览服务
+│   ├── FXOverviewMapper.java        # FX数据访问层
+│   ├── FXOverviewDTO.java           # 数据传输对象
+│   ├── ATMOverviewController.java   # ATM总览控制器
+│   └── DashboardOverviewController.java # 全业务总览控制器
+├── docs/                     # 项目文档
+│   ├── API.md               # API接口文档
+│   └── IPC_USAGE_GUIDE.md   # IPC使用指南
 ├── out/                      # 构建输出目录
 ├── package.json              # 项目配置
 └── README.md                 # 项目文档
@@ -156,7 +220,185 @@ electron-app/
 - `VITE_API_URL`: API服务器地址
 - `VITE_WS_URL`: WebSocket服务器地址
 
+## 🔌 后端API接口
+
+### 总览模式专用接口
+
+#### FX外汇业务总览
+```http
+GET /Bank/fx/overview/yesterday          # 外汇业务总览数据
+```
+
+**返回数据结构：**
+```json
+{
+  "success": true,
+  "data": {
+    "summary": {
+      "total": 785,                      // 总交易量
+      "sumAmount": 7737400,              // 总交易金额
+      "trend": -11.99                    // 趋势百分比
+    },
+    "weeklyComparison": {
+      "thisWeek": 785,                   // 本周交易量
+      "lastWeek": 892,                   // 上周交易量
+      "percentage": -11.99,              // 变化百分比
+      "dailyData": [                     // 近7天每日数据
+        {
+          "date": "2024-06-18",
+          "volume": 180,                 // 当日交易量
+          "amount": 850000               // 当日交易金额
+        }
+        // ... 其他6天数据
+      ]
+    },
+    "topProvinces": [],                  // 热门省份数据
+    "quickInsights": []                  // 快速洞察
+  }
+}
+```
+
+#### ATM业务总览
+```http
+GET /Bank/atm/overview/yesterday         # ATM业务总览数据
+```
+
+#### 全业务总览
+```http
+GET /Bank/overview/dashboard?timeRange=week
+```
+
+### 详细分析接口
+```http
+GET /Bank/fx/province/yesterday     # FX省份分布
+GET /Bank/fx/purpose/yesterday      # FX交易目的
+GET /Bank/fx/kind/yesterday         # FX币种分布
+GET /Bank/fx/age/yesterday          # FX年龄分布
+
+GET /Bank/atm/province/yesterday    # ATM省份分布
+GET /Bank/atm/amount/distribution/yesterday  # ATM金额分布
+```
+
+### 响应格式
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    // 具体业务数据
+  },
+  "timestamp": 1719123456789
+}
+```
+
 ## 📊 数据接口
+
+### IPC通信接口
+系统使用Electron的IPC机制进行前后端通信，支持以下API：
+
+```typescript
+// 系统监控API
+window.api.getSystemStatus(): Promise<SystemStatus>
+window.api.getSystemInfo(): Promise<any>
+
+// 数据获取API
+window.api.fetchData(): Promise<any>
+window.api.fetchRegionData(params?: DataFetchParams): Promise<ApiResponse>
+window.api.fetchBusinessData(params?: BusinessDataParams): Promise<ApiResponse>
+
+// 总览模式专用API
+window.api.fetchOverviewData(params: OverviewDataParams): Promise<ApiResponse>
+```
+
+### 业务数据结构
+
+#### ATM业务数据
+```typescript
+interface ATMData {
+  totalTransactions: number    // 总交易笔数
+  totalAmount: number         // 总交易金额
+  avgAmount: number          // 平均交易金额
+  percentage: number         // 业务占比
+  trend: number             // 趋势百分比
+  provinceData: Array<{     // 省份分布数据
+    province: string
+    transcation_times: number
+    sum_amount: number
+  }>
+  amountDistribution: Array<{ // 金额分布数据
+    amountLevel: string
+    total: number
+  }>
+}
+```
+
+#### FX外汇业务数据
+```typescript
+interface FXData {
+  total: number              // 总交易笔数
+  sumAmount: number         // 总交易金额
+  percentage: number        // 业务占比
+  trend: number            // 趋势百分比
+  provinceData: Array<{    // 省份分布数据
+    province: string
+    total: number
+    sum_amount: number
+  }>
+  purposeData: Array<{     // 交易目的数据
+    purpose: string
+    total: number
+  }>
+  kindData: Array<{        // 币种分布数据
+    kind: string
+    total: number
+  }>
+  ageData: Array<{         // 年龄分布数据
+    ageLevel: string
+    total: number
+  }>
+}
+```
+
+#### 总览模式数据结构
+```typescript
+// 外汇业务总览数据
+interface FXOverviewData {
+  summary: OverviewSummary              // 汇总数据
+  weeklyComparison: WeeklyComparison    // 周对比数据
+  topProvinces: TopProvince[]           // 热门省份
+  quickInsights: string[]               // 快速洞察
+}
+
+// 汇总数据结构
+interface OverviewSummary {
+  total: number                         // 总交易量（笔数）
+  sumAmount: number                     // 总金额
+  trend: number                         // 趋势百分比
+}
+
+// 周对比数据结构
+interface WeeklyComparison {
+  thisWeek: number                      // 本周交易量总计
+  lastWeek: number                      // 上周交易量总计
+  percentage: number                    // 变化百分比
+  dailyData: DailyTransactionData[]     // 近7天每日详细数据
+}
+
+// 每日交易数据
+interface DailyTransactionData {
+  date: string                          // 日期 (YYYY-MM-DD)
+  volume: number                        // 当日交易量（笔数）
+  amount: number                        // 当日交易金额
+}
+
+// 热门省份数据
+interface TopProvince {
+  province: string                      // 省份名称
+  total: number                         // 交易笔数
+  sum_amount: number                    // 交易金额
+  percentage: number                    // 占比
+}
+```
 
 ### 告警数据结构
 ```typescript
@@ -165,19 +407,6 @@ interface AlertItem {
   title: string
   description: string
   level: 'critical' | 'warning' | 'info'
-  timestamp: Date
-}
-```
-
-### 交易数据结构
-```typescript
-interface TransactionItem {
-  id: string
-  account: string
-  amount: number
-  type: string
-  status: 'completed' | 'pending' | 'failed'
-  riskLevel: 'high' | 'medium' | 'low'
   timestamp: Date
 }
 ```
@@ -242,7 +471,59 @@ interface RegionStat {
 - **日志查看**: 查看控制台输出
 - **网络监控**: 检查API请求状态
 
+## 🏗️ 架构设计
+
+### 前后端分离架构
+- **前端**: Electron + Vue 3 + TypeScript
+- **后端**: Spring Boot + MyBatis + MySQL
+- **通信**: IPC (进程间通信) + HTTP API
+- **数据库**: MySQL 8.0+ 支持复杂查询和聚合
+
+### 数据流架构
+```
+前端组件 → IPC调用 → 主进程 → HTTP请求 → 后端API → 数据库
+                ↓
+            数据处理 ← 响应数据 ← JSON响应 ← 业务逻辑 ← MyBatis SQL
+```
+
+### 总览模式架构
+1. **前端组件层**: OverviewMode.vue 负责UI展示和图表渲染
+2. **IPC通信层**: fetchOverviewData API 负责数据获取
+3. **主进程处理层**: 数据聚合、错误处理和并发请求管理
+4. **后端API层**: 专用的总览模式接口，支持数据聚合
+5. **数据访问层**: MyBatis映射器，优化的SQL查询和数据聚合
+6. **预测算法层**: 基于历史数据的简单预测模型
+
+### 近一周趋势功能架构
+```
+前端趋势图表 ← 7天数据 ← 数据组合 ← 历史数据查询 + 预测算法
+                                    ↓              ↓
+                                MyBatis SQL    简单预测模型
+                                    ↓              ↓
+                                数据库查询      历史数据分析
+```
+
 ## 📝 更新日志
+
+### v1.2.0 (2024-06-24)
+- 🚀 **重大更新**: 完整实现外汇业务近一周趋势分析功能
+- 📊 **新增功能**: 7天趋势图表（6天历史数据 + 1天预测数据）
+- 🔮 **智能预测**: 基于历史数据的简单预测算法
+- 🗄️ **后端优化**: 使用MyBatis实现数据访问层，支持复杂SQL查询
+- 📈 **数据结构优化**: 完善WeeklyComparison和DailyTransactionData类型定义
+- 🔧 **API完善**: 统一的数据接口，支持并发请求和错误处理
+- 🎨 **前端优化**: 改进趋势图表显示，支持智能日期格式化
+- 📚 **文档更新**: 完善API文档和数据结构说明
+
+### v1.1.0 (2024-06-23)
+- ✨ 新增外汇业务总览模式
+- 🏦 完善ATM和FX业务分析功能
+- 📊 新增三种显示模式：总览、详细、对比
+- 🔄 实现专用的总览模式API接口
+- 📈 新增趋势分析和周对比功能
+- 🗺️ 优化省份分布可视化
+- 🎨 改进UI组件和动画效果
+- 📚 完善API文档和类型定义
 
 ### v1.0.0 (2024-06-16)
 - ✨ 初始版本发布
@@ -281,4 +562,17 @@ interface RegionStat {
 
 ---
 
-**银行告警监控系统** - 专业、安全、高效的银行业务监控解决方案 🏦✨
+**银行业务监控分析系统** - 专业、智能、高效的银行业务监控和数据分析解决方案 🏦📊✨
+
+## 🎯 核心特性
+
+- 🏦 **多业务支持**: ATM业务和外汇业务独立监控分析
+- 📊 **三种分析模式**: 总览模式、详细分析、对比分析
+- 📈 **智能趋势分析**: 近一周趋势图表，包含历史数据和预测算法
+- 🔮 **预测功能**: 基于历史数据的简单预测模型，支持未来趋势预估
+- 🗺️ **地域分布统计**: 省份级别的业务分布分析
+- 🔄 **实时数据更新**: 支持手动刷新和自动更新机制
+- 🎨 **现代化UI设计**: 响应式布局、ECharts图表、专业视觉效果
+- 🔌 **完整API体系**: 前后端分离、IPC通信、MyBatis数据访问
+- 🛡️ **类型安全**: 完整的TypeScript类型定义和检查
+- 🗄️ **数据库支持**: MySQL + MyBatis，支持复杂查询和数据聚合

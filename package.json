@@ -36,6 +36,7 @@
     "echarts-extension-amap": "^1.12.0",
     "lucide-vue-next": "^0.514.0",
     "mysql2": "^3.14.1",
+    "pinia": "^3.0.3",
     "reka-ui": "^2.3.1",
     "shadcn-vue": "^2.2.0",
     "systeminformation": "^5.27.1",

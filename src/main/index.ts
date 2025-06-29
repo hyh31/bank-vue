@@ -3,8 +3,11 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import * as si from 'systeminformation'
-import axios from 'axios'
 import mysql from 'mysql2/promise'
+import { fetchBusinessDataHandler } from '../shared/handlers/fetch-business-data'
+import { fetchOverviewDataHandler } from '../shared/handlers/fetch-overview-data'
+import { fetchDataHandler } from '../shared/handlers/fetchData'
+import { fetchRegionDataHandler } from '../shared/handlers/fetch-region-data'
 
 function createWindow(): void {
   // Create the browser window.
@@ -57,17 +60,6 @@ app.whenReady().then(() => {
 
   // 系统监控 IPC 处理
   setupSystemMonitoring()
-
-  // 保留原有的仪表盘地域接口
-  ipcMain.handle('fetchData', async () => {
-    try {
-      const response = await axios.get(`http://localhost:9090/Bank/atm/province/yesterday`)
-      return response.data
-    } catch (error) {
-      console.error('Error fetching data:', error)
-      throw new Error('无法获取数据')
-    }
-  })
 
   // 数据获取 IPC 处理
   setupDataFetching()
@@ -216,198 +208,15 @@ function setupSystemMonitoring(): void {
  * 设置数据获取功能
  */
 function setupDataFetching(): void {
-  // 后端API基础URL
-  const API_BASE_URL = 'http://localhost:9090'
-
-  // 获取地域分布数据
-  ipcMain.handle('fetch-region-data', async (_, params) => {
-    const { dataType = 'transaction' } = params || {}
-    try {
-      // 根据数据类型选择不同的API端点
-      let endpoint = ''
-      switch (dataType) {
-        // 地域分布--交易数量
-        case 'transaction':
-        // 地域分布--交易金额
-        case 'amount':
-          endpoint = '/Bank/atm_fx/province/p_c_m/yesterday'
-          break
-        // 地域分布--风险指数
-        case 'risk':
-          endpoint = '/Bank/atm/province/risk/yesterday'
-          break
-        default:
-          endpoint = '/Bank/atm/province/yesterday'
-      }
-      const response = await axios.get(`${API_BASE_URL}${endpoint}`)
-      return {
-        success: true,
-        data: response.data.data || response.data,
-        message: '数据获取成功',
-        timestamp: new Date().toISOString()
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        data: [],
-        message: error.message || '数据获取失败',
-        error: error.response?.data || error.message
-      }
-    }
-  })
+  // 保留原有的仪表盘地域接口
+  ipcMain.handle('fetchData', fetchDataHandler)
 
   // 获取业务类型分布数据
-  ipcMain.handle('fetch-business-data', async (_, params) => {
-    const { businessType = 'all', analysisType = 'overview' } = params || {}
-    try {
-      console.log('获取业务类型数据:', { businessType, analysisType })
-
-      // 根据业务类型和分析类型选择不同的API端点
-      const endpoints = {
-        // ATM相关接口
-        atm: {
-          overview: '/Bank/atm/overview/yesterday',
-          province: '/Bank/atm/province/yesterday',
-          amount: '/Bank/atm/amount/distribution/yesterday',
-          kpi: '/Bank/atm/kpi/yesterday'
-        },
-        // FX相关接口
-        fx: {
-          overview: '/Bank/fx/overview/yesterday',
-          province: '/Bank/fx/province/yesterday',
-          purpose: '/Bank/fx/purpose/yesterday',
-          kind: '/Bank/fx/kind/yesterday',
-          age: '/Bank/fx/age/yesterday',
-          kpi: '/Bank/fx/kpi/yesterday'
-        }
-      }
-
-      const results: any = {}
-
-      // 获取ATM数据
-      if (businessType === 'all' || businessType === 'atm') {
-        try {
-          // 使用endpoints对象获取ATM数据
-          // 使用并发请求
-          const[
-            atmOverviewResponse,
-            atmProvinceResponse,
-            atmAmountResponse,
-            // atmKpiResponse
-          ] = await Promise.allSettled([
-            axios.get(`${API_BASE_URL}${endpoints.atm.overview}`),
-            axios.get(`${API_BASE_URL}${endpoints.atm.province}`),
-            axios.get(`${API_BASE_URL}${endpoints.atm.amount}`),
-            // axios.get(`${API_BASE_URL}${endpoints.atm.kpi}`)
-          ])
-          
-          results.atm = {
-            overview: atmOverviewResponse.status ==='fulfilled' ? atmOverviewResponse.value.data.data: [],
-            province: atmProvinceResponse.status ==='fulfilled' ? atmProvinceResponse.value.data.data: [],
-            amount: atmAmountResponse.status ==='fulfilled' ? atmAmountResponse.value.data.data: [],
-            // kpi: atmKpiResponse.data.data || atmKpiResponse.data
-          }
-        } catch (error) {
-          console.warn('获取ATM数据失败:', error)
-          results.atm = { overview: [], province: [], amount: [], kpi: [] }
-        }
-      }
-
-      // 获取FX数据
-      if (businessType === 'all' || businessType === 'fx') {
-        try {
-          // 使用并发请求
-          // 使用endpoints对象获取FX数据
-          // 并发请求，部分失败不影响其他
-          const fxresults = await Promise.allSettled([
-            axios.get(`${API_BASE_URL}${endpoints.fx.province}`),
-            axios.get(`${API_BASE_URL}${endpoints.fx.purpose}`),
-            axios.get(`${API_BASE_URL}${endpoints.fx.kind}`),
-            axios.get(`${API_BASE_URL}${endpoints.fx.age}`)
-          ])
-
-          // 安全地提取数据
-          const [provinceResult, purposeResult, kindResult, ageResult] = fxresults
-          results.fx = {
-            province: provinceResult.status === 'fulfilled' ? provinceResult.value.data.data : [],
-            purpose: purposeResult.status === 'fulfilled' ? purposeResult.value.data.data : [],
-            kind: kindResult.status === 'fulfilled' ? kindResult.value.data.data : [],
-            age: ageResult.status === 'fulfilled' ? ageResult.value.data.data : []
-          }
-        } catch (error) {
-          console.warn('获取FX数据失败:', error)
-          results.fx = { province: [], purpose: [], kind: [], age: [] }
-        }
-      }
-
-      return {
-        success: true,
-        data: results,
-        message: '业务数据获取成功',
-        timestamp: new Date().toISOString()
-      }
-    } catch (error: any) {
-      console.error('获取业务数据失败:', error)
-      return {
-        success: false,
-        data: {},
-        message: error.message || '业务数据获取失败',
-        error: error.response?.data || error.message
-      }
-    }
-  })
+  ipcMain.handle('fetch-business-data', fetchBusinessDataHandler)
 
   // 获取总览数据
-  ipcMain.handle('fetch-overview-data', async (_, params) => {
-    const { businessType = 'all', timeRange = 'week' } = params || {}
-    try {
-      console.log('获取总览数据:', { businessType, timeRange })
+  ipcMain.handle('fetch-overview-data', fetchOverviewDataHandler)
 
-      // 根据业务类型选择不同的API端点
-      const result: any = {}
-
-      const endpoints = {
-        atm: '/Bank/atm/overview/yesterday',
-        fx: '/Bank/fx/overview/yesterday',
-        all: '/Bank/overview/dashboard'
-      }
-
-      // 获取ATM总览数据
-      if (businessType === 'atm' || businessType === 'all') {
-        try {
-          const response = await axios.get(`${API_BASE_URL}${endpoints.atm}`)
-          result.atm = response.data.data || response.data
-        } catch(error) {
-          console.warn('获取ATM总览数据失败:', error)
-          result.atm = {}
-        }
-      }
-      
-      // 获取Fx总览数据
-      if (businessType === 'fx' || businessType === 'all') {
-        try {
-          const response = await axios.get(`${API_BASE_URL}${endpoints.fx}`)
-          result.fx = response.data.data || response.data
-        } catch(error) {
-          console.warn('获取FX总览数据失败:', error)
-          result.fx = {}
-        }
-      }
-      return {
-        success: true,
-        data: result,
-        message: '总览数据获取成功',
-        timestamp: new Date().toISOString()
-      }
-
-    } catch (error: any) {
-      console.error('获取总览数据失败:', error)
-      return {
-        success: false,
-        data: {},
-        message: error.message || '总览数据获取失败',
-        error: error.response?.data || error.message
-      }
-    }
-  })
+  // 获取地域分布数据
+  ipcMain.handle('fetch-region-data', fetchRegionDataHandler)
 }

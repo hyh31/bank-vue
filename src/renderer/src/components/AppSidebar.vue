@@ -4,27 +4,17 @@ import icon from '../assets/admin.png'
 
 // 侧边栏使用
 import {
-  Activity,
   AlertTriangle,
-  BarChart3,
   Database,
-  GalleryVerticalEnd,
-  LineChart,
-  Monitor,
   PieChart,
-  Server,
-  Settings2,
   Shield,
   TrendingUp,
-  Zap,
-  Home,
   Building2,
   Eye,
   ShieldCheck,
   Gauge,
   TrendingUpDown,
   Bell,
-  BarChart4,
   Cpu
 } from 'lucide-vue-next'
 import NavMain from '@/components/NavMain.vue'

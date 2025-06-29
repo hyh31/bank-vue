@@ -64,11 +64,11 @@ const testRegionData = async () => {
     console.log('开始测试地域数据API...')
     
     // 检查API是否存在
-    if (!window.api || !window.api.fetchRegionData) {
+    if (!window.api || !(window.api as any).fetchRegionData) {
       throw new Error('window.api.fetchRegionData 不存在')
     }
     
-    const response = await window.api.fetchRegionData({ dataType: 'transaction' })
+    const response = await (window.api as any).fetchRegionData({ dataType: 'transaction' })
     console.log('地域数据API响应:', response)
     result.value = response
   } catch (err: any) {
@@ -87,11 +87,11 @@ const testBusinessData = async () => {
   try {
     console.log('开始测试业务数据API...')
     
-    if (!window.api || !window.api.fetchBusinessData) {
+    if (!window.api || !(window.api as any).fetchBusinessData) {
       throw new Error('window.api.fetchBusinessData 不存在')
     }
     
-    const response = await window.api.fetchBusinessData()
+    const response = await (window.api as any).fetchBusinessData()
     console.log('业务数据API响应:', response)
     result.value = response
   } catch (err: any) {
@@ -110,11 +110,11 @@ const testRealtimeData = async () => {
   try {
     console.log('开始测试实时数据API...')
     
-    if (!window.api || !window.api.fetchRealtimeData) {
+    if (!window.api || !(window.api as any).fetchRealtimeData) {
       throw new Error('window.api.fetchRealtimeData 不存在')
     }
     
-    const response = await window.api.fetchRealtimeData()
+    const response = await (window.api as any).fetchRealtimeData()
     console.log('实时数据API响应:', response)
     result.value = response
   } catch (err: any) {

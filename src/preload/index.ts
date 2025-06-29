@@ -1,23 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-
-// 系统状态接口定义
-interface SystemComponent {
-  name: string
-  value: string
-  percentage: number
-  status: 'normal' | 'warning' | 'critical'
-  total?: string
-  connectionCount?: number
-  maxConnections?: number
-}
-
-interface SystemStatus {
-  cpu: SystemComponent
-  memory: SystemComponent
-  network: SystemComponent
-  database: SystemComponent
-}
+import { SystemStatus } from '@shared/types'
 
 // 数据获取参数接口
 interface DataFetchParams {
@@ -53,10 +36,8 @@ const api = {
 
   // 数据获取API
   fetchData: () => ipcRenderer.invoke('fetchData'),
-  fetchRegionData: (params?: DataFetchParams): Promise<ApiResponse> =>
-    ipcRenderer.invoke('fetch-region-data', params),
-  fetchBusinessData: (params?: BusinessDataParams): Promise<ApiResponse> =>
-    ipcRenderer.invoke('fetch-business-data', params),
+  fetchRegionData: (params?: DataFetchParams): Promise<ApiResponse> => ipcRenderer.invoke('fetch-region-data', params),
+  fetchBusinessData: (params?: BusinessDataParams): Promise<ApiResponse> => ipcRenderer.invoke('fetch-business-data', params),
 
   // 总览模式专用API
   fetchOverviewData: (params: OverviewDataParams): Promise<ApiResponse> =>
