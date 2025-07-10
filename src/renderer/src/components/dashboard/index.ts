@@ -16,12 +16,6 @@ export { default as DataVisualizationDashboard } from '../DataVisualizationDashb
 export * from '../charts'
 
 /**
- * 类型定义导出
- * 从独立的类型文件中导出所有类型定义
- */
-export * from './types'
-
-/**
  * 组件默认配置
  * 提供统一的默认配置，确保组件行为的一致性
  */
@@ -88,23 +82,11 @@ export const DASHBOARD_PACKAGE_NAME = 'bank-monitor-dashboard'
  * 方便一次性导入所有内容
  */
 export default {
-  // 主要组件
-  Dashboard,
-  DataVisualizationDashboard,
 
   // 配置
   DEFAULT_COLORS,
   DEFAULT_CHART_CONFIG,
   DEFAULT_TABLE_CONFIG,
-
-  // 工具函数
-  formatCurrency,
-  formatPercentage,
-  formatDateTime,
-  generateId,
-  debounce,
-  throttle,
-  deepClone,
 
   // 版本信息
   version: DASHBOARD_PACKAGE_VERSION,

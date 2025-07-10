@@ -51,367 +51,44 @@
     <!-- 主要内容区域 -->
     <div class="flex-1 p-4 space-y-4 overflow-hidden">
       <!-- 关键指标卡片 -->
-      <div class="grid grid-cols-4 gap-4">
-        <Card
-          v-for="metric in keyMetrics"
-          :key="metric.id"
-          class="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-primary/50 group hover:bg-primary/5"
-          style="height: 145px"
-        >
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
-            <CardTitle class="text-sm font-medium group-hover:text-primary transition-colors">
-              {{ metric.title }}
-            </CardTitle>
-            <component
-              :is="metric.icon"
-              :class="[
-                'h-4 w-4 transition-all duration-300 group-hover:scale-110',
-                metric.iconColor
-              ]"
-            />
-          </CardHeader>
-          <CardContent class="pb-3">
-            <div class="text-xl font-bold group-hover:text-primary transition-colors mb-1">
-              {{ metric.value }}
-            </div>
-            <div class="flex items-center text-xs text-muted-foreground">
-              <component
-                :is="
-                  metric.trend === 'up'
-                    ? TrendingUp
-                    : metric.trend === 'down'
-                      ? TrendingDown
-                      : Minus
-                "
-                :class="['h-3 w-3 mr-1 transition-all duration-300', getTrendColor(metric.trend)]"
-              />
-              <span :class="getTrendColor(metric.trend)">{{ metric.change }}</span>
-              <span class="ml-1">{{ metric.compareType === 'last' ? '较上次' : '较昨日' }}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <KeyMetricsSection />
 
       <!-- 实时告警区域 -->
       <div class="grid grid-cols-3 gap-4">
         <!-- 告警列表 -->
-        <div class="col-span-1">
-          <Card
-            class="hover:shadow-md transition-all duration-300 hover:border-primary/30"
-            style="height: 290px"
-          >
-            <CardHeader class="pb-2">
-              <CardTitle class="flex items-center">
-                <AlertTriangle class="w-5 h-5 mr-2 text-destructive animate-pulse" />
-                实时告警
-                <Badge variant="destructive" class="ml-2 text-xs">{{
-                  realtimeAlerts.length
-                }}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent class="h-full overflow-hidden relative">
-              <div
-                ref="alertContainer"
-                class="space-y-3 transition-transform duration-1000 ease-in-out"
-                :style="{ transform: `translateY(-${currentAlertIndex * 100}px)` }"
-              >
-                <!-- 原始告警列表 -->
-                <div
-                  v-for="alert in realtimeAlerts"
-                  :key="alert.id"
-                  class="p-3 rounded-lg border hover:bg-muted/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-sm"
-                  style="height: 88px"
-                >
-                  <div class="flex items-start justify-between h-full">
-                    <div class="flex items-start space-x-3 flex-1 min-w-0">
-                      <component
-                        :is="getAlertIcon(alert.level)"
-                        :class="['h-4 w-4 mt-0.5 flex-shrink-0', getAlertIconColor(alert.level)]"
-                      />
-                      <div class="flex-1 min-w-0">
-                        <div class="text-sm font-medium truncate">{{ alert.title }}</div>
-                        <div class="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {{ alert.description }}
-                        </div>
-                        <div class="text-xs text-muted-foreground mt-1">
-                          {{ formatTime(alert.timestamp) }}
-                        </div>
-                      </div>
-                    </div>
-                    <Badge
-                      :variant="getAlertVariant(alert.level)"
-                      class="text-xs hover:scale-105 transition-transform flex-shrink-0 ml-2"
-                    >
-                      {{ alert.level }}
-                    </Badge>
-                  </div>
-                </div>
-
-                <!-- 复制的告警列表，用于无缝循环 -->
-                <div
-                  v-for="alert in realtimeAlerts"
-                  :key="`copy-${alert.id}`"
-                  class="p-3 rounded-lg border hover:bg-muted/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-sm"
-                  style="height: 88px"
-                >
-                  <div class="flex items-start justify-between h-full">
-                    <div class="flex items-start space-x-3 flex-1 min-w-0">
-                      <component
-                        :is="getAlertIcon(alert.level)"
-                        :class="['h-4 w-4 mt-0.5 flex-shrink-0', getAlertIconColor(alert.level)]"
-                      />
-                      <div class="flex-1 min-w-0">
-                        <div class="text-sm font-medium truncate">{{ alert.title }}</div>
-                        <div class="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {{ alert.description }}
-                        </div>
-                        <div class="text-xs text-muted-foreground mt-1">
-                          {{ formatTime(alert.timestamp) }}
-                        </div>
-                      </div>
-                    </div>
-                    <Badge
-                      :variant="getAlertVariant(alert.level)"
-                      class="text-xs hover:scale-105 transition-transform flex-shrink-0 ml-2"
-                    >
-                      {{ alert.level }}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <AlertsSection />
 
         <!-- 告警统计和系统状态 -->
-        <div class="space-y-4">
-          <!-- 昨日地域分布统计 -->
-          <Card class="hover:shadow-md transition-shadow duration-300" style="height: 290px">
-            <CardHeader class="pb-2">
-              <CardTitle class="flex items-center">
-                <BarChart3 class="w-4 h-4 mr-2" />
-                昨日地域分布
-              </CardTitle>
-            </CardHeader>
-            <CardContent class="h-full overflow-hidden relative">
-              <div
-                ref="regionContainer"
-                class="space-y-3"
-                :style="{
-                  transform: `translateY(-${regionScrollOffset}px)`,
-                  transition: isRegionScrolling ? 'none' : 'transform 0.1s ease-out'
-                }"
-              >
-                <!-- 原始地域列表 -->
-                <div
-                  v-for="region in regionStats"
-                  :key="region.name"
-                  class="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  style="height: 48px"
-                >
-                  <div class="flex items-center">
-                    <div :class="['w-3 h-3 rounded-full mr-3', region.color]"></div>
-                    <span class="text-sm font-medium">{{ region.name }}</span>
-                  </div>
-                  <div class="flex items-center space-x-2">
-                    <span class="text-xs text-muted-foreground">{{ region.percentage }}%</span>
-                    <Badge :variant="region.variant" class="hover:scale-105 transition-transform">
-                      {{ region.count }}笔
-                    </Badge>
-                  </div>
-                </div>
+        <RegionStatsSection />
 
-                <!-- 复制的地域列表，用于无缝循环 -->
-                <div
-                  v-for="region in regionStats"
-                  :key="`copy-${region.name}`"
-                  class="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  style="height: 48px"
-                >
-                  <div class="flex items-center">
-                    <div :class="['w-3 h-3 rounded-full mr-3', region.color]"></div>
-                    <span class="text-sm font-medium">{{ region.name }}</span>
-                  </div>
-                  <div class="flex items-center space-x-2">
-                    <span class="text-xs text-muted-foreground">{{ region.percentage }}%</span>
-                    <Badge :variant="region.variant" class="hover:scale-105 transition-transform">
-                      {{ region.count }}笔
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div class="space-y-4">
-          <!-- 系统状态监控 -->
-          <Card class="hover:shadow-md transition-shadow duration-300" style="height: 290px">
-            <CardHeader>
-              <CardTitle class="flex items-center">
-                <Activity class="w-4 h-4 mr-2" />
-                系统状态
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div class="space-y-5">
-                <div v-for="status in systemStatusList" :key="status.name" class="space-y-2">
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium">{{ status.name }}</span>
-                    <Badge :variant="status.status === 'normal' ? 'default' : 'secondary'">
-                      {{ status.value }}
-                    </Badge>
-                  </div>
-                  <div class="w-full bg-muted rounded-full h-2">
-                    <div
-                      :class="['h-2 rounded-full transition-all duration-500', status.color]"
-                      :style="{ width: `${status.percentage}%` }"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <SystemStatusSection 
+          :auto-refresh="true" 
+          :refresh-interval="10000" 
+        />
       </div>
 
       <!-- 监控数据表格 -->
-      <Card class="hover:shadow-md transition-shadow duration-300" style="height: 18rem;">
-        <CardHeader>
-          <CardTitle class="flex items-center justify-between">
-            <div class="flex items-center">
-              <Database class="w-5 h-5 mr-2" />
-              交易监控数据
-            </div>
-            <Button variant="outline" size="sm">
-              <RefreshCw class="w-4 h-4 mr-2" />
-              刷新
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div class="max-h-[12.5rem] overflow-y-auto">
-            <Table class="relative">
-              <TableHeader class="sticky top-0 z-10 bg-white shadow-sm">
-                <TableRow>
-                  <TableHead class="bg-white">交易ID</TableHead>
-                  <TableHead class="bg-white">金额</TableHead>
-                  <TableHead class="bg-white">类型</TableHead>
-                  <TableHead class="bg-white">状态</TableHead>
-                  <TableHead class="bg-white">风险等级</TableHead>
-                  <TableHead class="bg-white">时间</TableHead>
-                  <TableHead class="bg-white">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow
-                  v-for="transaction in transactionData"
-                  :key="transaction.id"
-                  class="hover:bg-muted/50 transition-colors cursor-pointer"
-                >
-                  <TableCell class="font-mono text-primary">{{ transaction.id }}</TableCell>
-                  <TableCell class="font-mono">{{ formatCurrency(transaction.amount) }}</TableCell>
-                  <TableCell>{{ transaction.type }}</TableCell>
-                  <TableCell>
-                    <Badge
-                      :variant="getStatusVariant(transaction.status)"
-                      class="hover:scale-105 transition-transform"
-                    >
-                      {{ transaction.status }}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      :variant="getRiskVariant(transaction.riskLevel)"
-                      class="hover:scale-105 transition-transform"
-                    >
-                      {{ transaction.riskLevel }}
-                    </Badge>
-                  </TableCell>
-                  <TableCell class="text-muted-foreground">{{
-                    formatTime(transaction.timestamp)
-                  }}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm" class="hover:scale-105 transition-transform">
-                      查看详情
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <TransactionSection />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import KeyMetricsSection from './dashboard/KeyMetricsSection.vue'
+import SystemStatusSection from '@/components/dashboard/SystemStatusSection.vue'
+import AlertsSection from '@/components/dashboard/AlertsSection.vue'
+import RegionStatsSection from '@/components/dashboard/RegionStatsSection.vue'
+import TransactionSection from '@/components/dashboard/TransactionSection.vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
-  TrendingUp,
-  TrendingDown,
-  Minus,
   Activity,
-  AlertTriangle,
-  Shield,
-  Users,
-  Database,
   RefreshCw,
-  Settings,
-  AlertCircle,
-  XCircle,
-  CheckCircle,
-  BarChart3
+  Settings
 } from 'lucide-vue-next'
 
-// shadcn-vue 组件导入
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table'
 
-/**
- * 银行告警系统数据接口定义
- */
-interface KeyMetric {
-  id: string
-  title: string
-  value: string
-  change: string
-  trend: 'up' | 'down' | 'neutral'
-  icon: any
-  iconColor: string
-  compareType: string
-}
-
-interface AlertItem {
-  id: string
-  title: string
-  description: string
-  level: 'critical' | 'warning' | 'info'
-  timestamp: Date
-}
-
-interface TransactionItem {
-  id: string
-  amount: number
-  type: string
-  status: 'completed' | 'pending' | 'failed'
-  riskLevel: 'high' | 'medium' | 'low'
-  timestamp: Date
-}
-
-/**
- * 系统状态管理
- */
 const systemStatus = ref<'normal' | 'warning' | 'critical'>('normal')
 const isRefreshing = ref(false)
 
@@ -419,16 +96,8 @@ const isRefreshing = ref(false)
  * 告警自动滚动管理
  */
 const currentAlertIndex = ref(0)
-const alertContainer = ref<HTMLElement | null>(null)
-let alertScrollInterval: NodeJS.Timeout | null = null
-
-/**
- * 地域分布自动滚动管理
- */
-const regionScrollOffset = ref(0)
-const isRegionScrolling = ref(false)
-const regionContainer = ref<HTMLElement | null>(null)
-let regionScrollInterval: NodeJS.Timeout | null = null
+// const alertContainer = ref<HTMLElement | null>(null)
+// let alertScrollInterval: NodeJS.Timeout | null = null
 
 const systemStatusText = computed(() => {
   const statusMap = {
@@ -440,466 +109,6 @@ const systemStatusText = computed(() => {
 })
 
 /**
- * 关键指标数据
- */
-const keyMetrics = ref<KeyMetric[]>([
-  {
-    id: 'total-alerts',
-    title: '今日告警总数',
-    value: '127',
-    change: '+23%',
-    trend: 'up',
-    icon: AlertTriangle,
-    iconColor: 'text-destructive',
-    compareType: 'yesterday'
-  },
-  {
-    id: 'high-risk-transactions',
-    title: '高风险交易',
-    value: '8',
-    change: '-12%',
-    trend: 'down',
-    icon: Shield,
-    iconColor: 'text-orange-500',
-    compareType: 'yesterday'
-  },
-  {
-    id: 'monitored-accounts',
-    title: '监控交易数',
-    value: '2,780',
-    change: '+5%',
-    trend: 'up',
-    icon: Users,
-    iconColor: 'text-blue-500',
-    compareType: 'yesterday'
-  },
-  {
-    id: 'system-health',
-    title: '系统健康度',
-    value: '',
-    change: '',
-    trend: 'up',
-    icon: Activity,
-    iconColor: 'text-green-500',
-    compareType: 'last'
-  }
-])
-
-/**
- * 实时告警数据
- */
-const realtimeAlerts = ref<AlertItem[]>([
-  {
-    id: 'alert-1',
-    title: '异常大额转账检测',
-    description: '账户 ****1234 发生单笔 500万 转账，超出日常交易阈值',
-    level: 'critical',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000) // 5分钟前
-  },
-  {
-    id: 'alert-2',
-    title: '可疑登录行为',
-    description: '用户 张三 在异地IP登录，存在账户安全风险',
-    level: 'warning',
-    timestamp: new Date(Date.now() - 15 * 60 * 1000) // 15分钟前
-  },
-  {
-    id: 'alert-3',
-    title: '系统性能监控',
-    description: '核心交易系统CPU使用率达到85%，建议关注',
-    level: 'info',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000) // 30分钟前
-  }
-])
-
-/**
- * 昨日地域分布统计数据
- */
-const regionStats = ref<any[]>([])
-const tailwindColors = [
-  'bg-blue-500',
-  'bg-green-500',
-  'bg-yellow-500',
-  'bg-purple-500',
-  'bg-orange-500',
-  'bg-pink-500',
-  'bg-indigo-500',
-  'bg-teal-500',
-  'bg-red-500',
-  'bg-cyan-500',
-  'bg-lime-500',
-  'bg-amber-500'
-]
-const regionColorMap: Record<string, string> = {}
-let colorIndex = 0
-const getColorByRegin = (name: string): string => {
-  if (!regionColorMap[name]) {
-    regionColorMap[name] = tailwindColors[colorIndex % tailwindColors.length]
-    colorIndex++
-  }
-  return regionColorMap[name]
-}
-
-/**
- * 获取昨日地域分布统计数据
- */
-const fetchRegionStats = async () => {
-  try {
-    console.log('正在获取昨日地域分布统计数据...')
-    const res = await (window.api as any).fetchData()
-    console.log('昨日地域分布统计数据获取成功：', res)
-    const data = res.data
-    let list: any[] = []
-    if (Array.isArray(data)) {
-      list = data
-    } else if (Array.isArray(data?.list)) {
-      list = data.list
-    }
-    const total = list.reduce((sum, item) => sum + (item.transcationTimes || 0), 0)
-    regionStats.value = list.map((item: any) => ({
-      ...item,
-      name: item.province,
-      count: item.transcationTimes,
-      percentage: ((item.transcationTimes / total) * 100).toFixed(2),
-      color: getColorByRegin(item.province),
-      variant: 'default' as const
-    }))
-    console.log('regionStats:', regionStats.value)
-  } catch (error) {
-    const err = error as Error
-    console.error('获取昨日地域分布统计数据失败：', err)
-    console.error('请检查网络连接并重试。', err.message)
-  }
-}
-
-/**
- * 交易监控数据
- */
-const transactionData = ref<TransactionItem[]>([
-  {
-    id: 'TXN001234567',
-    amount: 5000000,
-    type: '转账',
-    status: 'pending',
-    riskLevel: 'high',
-    timestamp: new Date(Date.now() - 2 * 60 * 1000)
-  },
-  {
-    id: 'TXN001234568',
-    amount: 150000,
-    type: '取现',
-    status: 'completed',
-    riskLevel: 'medium',
-    timestamp: new Date(Date.now() - 10 * 60 * 1000)
-  },
-  {
-    id: 'TXN001234569',
-    amount: 25000,
-    type: '存款',
-    status: 'completed',
-    riskLevel: 'low',
-    timestamp: new Date(Date.now() - 25 * 60 * 1000)
-  },
-  {
-    id: 'TXN001234570',
-    amount: 800000,
-    type: '转账',
-    status: 'failed',
-    riskLevel: 'high',
-    timestamp: new Date(Date.now() - 45 * 60 * 1000)
-  }
-])
-
-/**
- * 系统状态监控数据
- */
-const systemStatusList = ref([
-  {
-    name: 'CPU使用率',
-    value: '获取中...',
-    percentage: 0,
-    status: 'normal',
-    color: 'bg-gray-500'
-  },
-  {
-    name: '内存使用率',
-    value: '获取中...',
-    percentage: 0,
-    status: 'normal',
-    color: 'bg-gray-500'
-  },
-  {
-    name: '网络延迟',
-    value: '获取中...',
-    percentage: 0,
-    status: 'normal',
-    color: 'bg-gray-500'
-  },
-  {
-    name: '数据库连接',
-    value: '获取中...',
-    percentage: 0,
-    status: 'normal',
-    color: 'bg-gray-500'
-  }
-])
-
-/**
- * 系统健康度监控
- */
-// 系统健康度
-const lastHealth = ref<number | null>(null)
-// 健康度计算
-const getSystemHealth = () => {
-  const scores = systemStatusList.value.map((item) => {
-    if (item.status === 'normal') return 100
-    if (item.status === 'warning') return 70
-    if (item.status === 'critical') return 30
-    return 0
-  })
-  return Number((scores.reduce((a, b) => a + b) / scores.length).toFixed())
-}
-
-/**
- * 工具函数
- */
-
-/**
- * 获取趋势颜色样式
- */
-const getTrendColor = (trend: 'up' | 'down' | 'neutral') => {
-  switch (trend) {
-    case 'up':
-      return 'text-green-600'
-    case 'down':
-      return 'text-red-600'
-    default:
-      return 'text-gray-600'
-  }
-}
-
-/**
- * 获取告警变体样式
- */
-const getAlertVariant = (level: 'critical' | 'warning' | 'info') => {
-  switch (level) {
-    case 'critical':
-      return 'destructive'
-    case 'warning':
-      return 'default'
-    case 'info':
-      return 'default'
-    default:
-      return 'default'
-  }
-}
-
-/**
- * 获取告警图标
- */
-const getAlertIcon = (level: 'critical' | 'warning' | 'info') => {
-  switch (level) {
-    case 'critical':
-      return XCircle
-    case 'warning':
-      return AlertCircle
-    case 'info':
-      return CheckCircle
-    default:
-      return AlertCircle
-  }
-}
-
-/**
- * 获取告警图标颜色
- */
-const getAlertIconColor = (level: 'critical' | 'warning' | 'info') => {
-  switch (level) {
-    case 'critical':
-      return 'text-red-500'
-    case 'warning':
-      return 'text-yellow-500'
-    case 'info':
-      return 'text-blue-500'
-    default:
-      return 'text-gray-500'
-  }
-}
-
-/**
- * 获取状态变体样式
- */
-const getStatusVariant = (status: string) => {
-  switch (status) {
-    case 'completed':
-      return 'default'
-    case 'pending':
-      return 'secondary'
-    case 'failed':
-      return 'destructive'
-    default:
-      return 'outline'
-  }
-}
-
-/**
- * 获取风险等级变体样式
- */
-const getRiskVariant = (riskLevel: string) => {
-  switch (riskLevel) {
-    case 'high':
-      return 'destructive'
-    case 'medium':
-      return 'secondary'
-    case 'low':
-      return 'default'
-    default:
-      return 'outline'
-  }
-}
-
-/**
- * 格式化货币
- */
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('zh-CN', {
-    style: 'currency',
-    currency: 'CNY'
-  }).format(amount)
-}
-
-/**
- * 格式化时间
- */
-const formatTime = (date: Date) => {
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const minutes = Math.floor(diff / (1000 * 60))
-
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes}分钟前`
-
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}小时前`
-
-  return date.toLocaleDateString('zh-CN')
-}
-
-/**
- * 事件处理函数
- */
-
-/**
- * 获取系统状态颜色
- */
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'normal':
-      return 'bg-green-500'
-    case 'warning':
-      return 'bg-yellow-500'
-    case 'critical':
-      return 'bg-red-500'
-    default:
-      return 'bg-gray-500'
-  }
-}
-
-/**
- * 获取真实系统状态
- */
-const getSystemStatus = async () => {
-  try {
-    console.log('开始获取系统状态...')
-    console.log('window.api:', window.api)
-
-    // 检查是否有 API 可用
-    if (window.api && window.api.getSystemStatus) {
-      console.log('API可用，正在调用...')
-      const systemData = await window.api.getSystemStatus()
-      console.log('获取到系统数据:', systemData)
-
-      // 更新系统状态列表
-      systemStatusList.value = [
-        {
-          name: systemData.cpu.name,
-          value: systemData.cpu.value,
-          percentage: systemData.cpu.percentage,
-          status: systemData.cpu.status,
-          color: getStatusColor(systemData.cpu.status)
-        },
-        {
-          name: systemData.memory.name,
-          value: systemData.memory.value,
-          percentage: systemData.memory.percentage,
-          status: systemData.memory.status,
-          color: getStatusColor(systemData.memory.status)
-        },
-        {
-          name: systemData.network.name,
-          value: systemData.network.value,
-          percentage: systemData.network.percentage,
-          status: systemData.network.status,
-          color: getStatusColor(systemData.network.status)
-        },
-        {
-          name: systemData.database.name,
-          value: systemData.database.value,
-          percentage: systemData.database.percentage,
-          status: systemData.database.status,
-          color: getStatusColor(systemData.database.status)
-        }
-      ]
-
-      // 更新整体系统状态
-      const hasError = systemStatusList.value.some((item) => item.status === 'critical')
-      const hasWarning = systemStatusList.value.some((item) => item.status === 'warning')
-
-      if (hasError) {
-        systemStatus.value = 'critical'
-      } else if (hasWarning) {
-        systemStatus.value = 'warning'
-      } else {
-        systemStatus.value = 'normal'
-      }
-
-      // 计算健康度
-      const health = getSystemHealth()
-      let diff = 0
-      if (lastHealth.value !== null) {
-        diff = health - lastHealth.value
-      }
-      const trend = diff > 0 ? 'up' : diff < 0 ? 'down' : 'neutral'
-      const change = (diff > 0 ? '+' : diff < 0 ? '' : '+') + diff.toFixed(1) + '%'
-
-      // 更新健康度数据
-      const healthMetric = keyMetrics.value.find((m) => m.id === 'system-health')
-      if (healthMetric) {
-        healthMetric.value = health + '%'
-        healthMetric.change = lastHealth.value === null ? '+0.0%' : change
-        healthMetric.trend = trend as any
-      }
-      lastHealth.value = health
-
-      console.log('系统状态更新完成:', systemData)
-    } else {
-      console.warn('系统监控API不可用')
-      console.log('window对象:', window)
-      console.log('可用的属性:', Object.keys(window))
-    }
-  } catch (error) {
-    console.error('获取系统状态失败:', error)
-    console.error('错误详情:', error.message)
-    // 如果获取失败，显示错误状态
-    systemStatusList.value.forEach((item) => {
-      item.value = '获取失败'
-      item.status = 'critical'
-      item.color = 'bg-red-500'
-    })
-  }
-}
-
-/**
  * 刷新系统状态数据
  */
 const refreshData = async () => {
@@ -907,9 +116,9 @@ const refreshData = async () => {
 
   isRefreshing.value = true
   try {
-    // 获取真实系统状态
-    await getSystemStatus()
-    console.log('数据刷新完成')
+    // // 获取真实系统状态
+    // await refreshSystemData()
+    // console.log('数据刷新完成')
   } catch (error) {
     console.error('刷新失败:', error)
   } finally {
@@ -918,104 +127,14 @@ const refreshData = async () => {
 }
 
 /**
- * 启动告警自动滚动
- */
-const startAlertAutoScroll = () => {
-  if (realtimeAlerts.value.length <= 2) return
-
-  alertScrollInterval = setInterval(() => {
-    currentAlertIndex.value++
-
-    // 当滚动到复制列表的开始位置时，无缝重置到原始列表
-    if (currentAlertIndex.value >= realtimeAlerts.value.length) {
-      // 先移除过渡动画
-      const container = alertContainer.value
-      if (container) {
-        container.style.transition = 'none'
-        currentAlertIndex.value = 0
-
-        // 强制重绘后恢复动画
-        setTimeout(() => {
-          container.style.transition = 'transform 1000ms ease-in-out'
-        }, 50)
-      }
-    }
-  }, 3000) // 每3秒滚动一次
-}
-
-/**
- * 停止告警自动滚动
- */
-const stopAlertAutoScroll = () => {
-  if (alertScrollInterval) {
-    clearInterval(alertScrollInterval)
-    alertScrollInterval = null
-    console.log('✅ 告警自动滚动已停止')
-  }
-}
-
-/**
- * 启动地域分布自动滚动
- */
-const startRegionAutoScroll = () => {
-  if (regionStats.value.length <= 4) return // 如果城市数量少于等于4个，不需要滚动
-
-  isRegionScrolling.value = true
-  const itemHeight = 60 // 每个项目的高度（48px + 12px间距）
-  const totalHeight = regionStats.value.length * itemHeight
-
-  // 使用 requestAnimationFrame 实现平滑连续滚动
-  const scroll = () => {
-    if (!isRegionScrolling.value) return
-
-    // 每次移动 0.5px，实现平滑滚动
-    regionScrollOffset.value += 0.5
-
-    // 当滚动到原始列表的末尾时，无缝重置到开始位置
-    if (regionScrollOffset.value >= totalHeight) {
-      regionScrollOffset.value = 0
-    }
-
-    requestAnimationFrame(scroll)
-  }
-
-  // 开始滚动动画
-  requestAnimationFrame(scroll)
-}
-
-/**
- * 停止地域分布自动滚动
- */
-const stopRegionAutoScroll = () => {
-  isRegionScrolling.value = false
-  if (regionScrollInterval) {
-    clearInterval(regionScrollInterval)
-    regionScrollInterval = null
-  }
-  console.log('✅ 地域分布自动滚动已停止')
-}
-
-/**
  * 自动刷新数据
  */
 let refreshInterval: NodeJS.Timeout | null = null
 
 onMounted(async () => {
-  // 初始化时获取系统状态
-  getSystemStatus()
-
-  // 每10秒自动刷新系统状态
-  refreshInterval = setInterval(() => {
-    getSystemStatus()
-  }, 10000)
-
-  // 启动告警自动滚动
-  startAlertAutoScroll()
-  await fetchRegionStats()
-
-  // 启动地域分布自动滚动
-  startRegionAutoScroll()
-  await getSystemStatus()
+  // 监听窗口大小变化
+  calcuateScale()
+  window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
@@ -1028,16 +147,8 @@ onUnmounted(() => {
     console.log('✅ 系统状态刷新定时器已清理')
   }
 
-  // 停止告警自动滚动
-  stopAlertAutoScroll()
-
-  // 停止地域分布自动滚动
-  stopRegionAutoScroll()
-
   // 重置所有状态
   currentAlertIndex.value = 0
-  regionScrollOffset.value = 0
-  isRegionScrolling.value = false
   isRefreshing.value = false
 
   console.log('✅ Dashboard组件卸载完成')
@@ -1062,11 +173,6 @@ const calcuateScale = () => {
 const handleResize = () => {
   calcuateScale()
 }
-
-onMounted(() => {
-  calcuateScale()
-  window.addEventListener('resize', handleResize)
-})
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
