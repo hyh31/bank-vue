@@ -74,11 +74,13 @@
 </template>
 
 <script setup lang="ts">
-import KeyMetricsSection from './dashboard/KeyMetricsSection.vue'
-import SystemStatusSection from '@/components/dashboard/SystemStatusSection.vue'
-import AlertsSection from '@/components/dashboard/AlertsSection.vue'
-import RegionStatsSection from '@/components/dashboard/RegionStatsSection.vue'
-import TransactionSection from '@/components/dashboard/TransactionSection.vue'
+import {
+  KeyMetricsSection,
+  AlertsSection,
+  RegionStatsSection,
+  SystemStatusSection,
+  TransactionSection
+} from './dashboard'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   Activity,

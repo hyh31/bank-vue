@@ -52,7 +52,7 @@
                   :variant="getRiskVariant(transaction.riskLevel)"
                   class="hover:scale-105 transition-transform"
                 >
-                  {{ transaction.riskLevel }}
+                  {{ getRiskLevelText(transaction.riskLevel) }}
                 </Badge>
               </TableCell>
               <TableCell class="text-muted-foreground">{{
@@ -76,12 +76,12 @@
 
 <script setup lang="ts">
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Database } from 'lucide-vue-next'
+import { Database, RefreshCw } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableRow, TableCell, TableHead, TableHeader } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { useTransactions } from './useTransactions'
 
-const { transactionData, isLoading, formatCurrency, getStatusVariant, getRiskVariant, formatTime } = useTransactions()
+const { transactionData, isLoading, formatCurrency, getStatusVariant, getRiskVariant, formatTime, getRiskLevelText } = useTransactions()
 
 </script>

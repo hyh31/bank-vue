@@ -8,7 +8,11 @@
         </CardTitle>
       </CardHeader>
       <CardContent class="h-full overflow-hidden relative">
+        <div v-if="isLoading" class="text-center py-8">
+          <div class="text-sm text-muted-foreground">加载地域数据中...</div>
+        </div>
         <div
+          v-else-if="regionStats.length > 0"
           ref="regionContainer"
           class="space-y-3"
           :style="{
@@ -53,6 +57,9 @@
               </Badge>
             </div>
           </div>
+        </div>
+        <div v-else class="text-center py-8">
+          <div class="text-sm text-muted-foreground">暂无地域数据</div>
         </div>
       </CardContent>
     </Card>

@@ -1,283 +1,244 @@
-# 银行监控告警系统 - 仪表盘组件包
+# 银行监控告警系统 - 仪表盘组件
 
-这个组件包包含了银行监控告警系统的所有仪表盘相关组件，遵循DRY原则设计，提供统一的接口和配置。
+银行监控告警系统的仪表盘组件库，包含了完整的数据展示和监控功能。
 
-## 📦 包含组件
+## 组件列表
 
-### 主要组件
-- **Dashboard** - 主仪表盘容器组件
-- **TopHeader** - 顶部标题栏组件
-- **StatusIndicator** - 系统状态指示器组件
+### 核心组件
+- **KeyMetricsSection** - 关键指标展示
+- **AlertsSection** - 告警信息滚动显示
+- **SystemStatusSection** - 系统状态监控
+- **RegionStatsSection** - 地域分布统计
+- **TransactionSection** - 交易数据表格
 
-### 数据展示组件
-- **StatCard** - 统计卡片组件
-- **ChartContainer** - 图表容器组件
-- **ProgressChart** - 进度图表组件
-- **DataTable** - 数据表格组件
+### 业务逻辑 (Composables)
+- **useMetrics** - 指标数据管理
+- **useAlerts** - 告警数据管理
+- **useSystemMonitor** - 系统监控
+- **useRegionStats** - 地域统计
+- **useTransactions** - 交易数据管理
+- **useHealthCalculator** - 健康度计算
 
-## 🚀 快速开始
+## 使用方法
 
-### 导入单个组件
+### 导入组件
 ```typescript
-import { Dashboard, StatCard, ChartContainer } from '@/components/dashboard'
+import {
+  KeyMetricsSection,
+  AlertsSection,
+  SystemStatusSection
+} from '@/components/dashboard'
 ```
 
-### 导入所有组件
+### 导入 Composables
 ```typescript
-import DashboardPackage from '@/components/dashboard'
+import { useMetrics, useAlerts } from '@/components/dashboard'
 ```
 
-### 导入类型定义
-```typescript
-import type { StatisticItem, ProgressItem, TableColumn } from '@/components/dashboard'
-```
+## 组件使用示例
 
-## 📖 组件使用示例
-
-### 1. Dashboard 主仪表盘
+### 关键指标组件
 ```vue
 <template>
-  <Dashboard />
+  <KeyMetricsSection />
 </template>
 
 <script setup lang="ts">
-import { Dashboard } from '@/components/dashboard'
+import { KeyMetricsSection } from '@/components/dashboard'
 </script>
 ```
 
-### 2. StatCard 统计卡片
+### 告警信息组件
 ```vue
 <template>
-  <StatCard
-    title="总余额"
-    value="¥2,152.62"
-    change="+12%"
-    trend="up"
-    :icon="DollarSign"
-    color="blue"
-  />
+  <AlertsSection />
 </template>
 
 <script setup lang="ts">
-import { StatCard } from '@/components/dashboard'
-import { DollarSign } from 'lucide-vue-next'
+import { AlertsSection } from '@/components/dashboard'
 </script>
 ```
 
-### 3. ChartContainer 图表容器
+### 系统状态组件
 ```vue
 <template>
-  <ChartContainer
-    title="收支分析"
-    :chart-data="chartData"
-    chart-type="bar"
-    :show-time-range="true"
-  />
+  <SystemStatusSection />
 </template>
 
 <script setup lang="ts">
-import { ChartContainer, type ChartData } from '@/components/dashboard'
+import { SystemStatusSection } from '@/components/dashboard'
+</script>
+```
 
-const chartData: ChartData = {
-  labels: ['收入', '支出', '已完成', '未完成'],
-  datasets: [{
-    label: '金额统计',
-    data: [1200, 800, 950, 400],
-    backgroundColor: ['#10B981', '#EF4444', '#3B82F6', '#F59E0B']
-  }]
+### 地域统计组件
+```vue
+<template>
+  <RegionStatsSection />
+</template>
+
+<script setup lang="ts">
+import { RegionStatsSection } from '@/components/dashboard'
+</script>
+```
+
+### 交易数据组件
+```vue
+<template>
+  <TransactionSection />
+</template>
+
+<script setup lang="ts">
+import { TransactionSection } from '@/components/dashboard'
+</script>
+```
+
+## Composable 使用示例
+
+### 指标数据管理
+```typescript
+import { useMetrics } from '@/components/dashboard'
+
+const {
+  metrics,
+  initializeMetrics,
+  updateMetric
+} = useMetrics()
+```
+
+### 告警数据管理
+```typescript
+import { useAlerts } from '@/components/dashboard'
+
+const {
+  alerts,
+  fetchAlerts,
+  startAutoScroll
+} = useAlerts()
+```
+
+## 功能特性
+
+### 自动数据刷新
+所有组件都支持自动数据刷新，默认30秒更新一次。
+
+### 实时滚动效果
+告警信息和地域统计支持平滑的自动滚动显示。
+
+### 响应式布局
+组件在不同屏幕尺寸下自动调整布局和显示效果。
+
+### 错误处理
+内置完善的错误处理机制，网络异常时显示友好提示。
+
+## 工具函数
+
+### 货币格式化
+```typescript
+// 在 composable 中使用
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('zh-CN', {
+    style: 'currency',
+    currency: 'CNY'
+  }).format(amount)
 }
-</script>
 ```
 
-### 4. ProgressChart 进度图表
-```vue
-<template>
-  <ProgressChart
-    title="作业进度统计"
-    :progress-items="progressData"
-    :show-summary="true"
-  />
-</template>
-
-<script setup lang="ts">
-import { ProgressChart, type ProgressItem } from '@/components/dashboard'
-
-const progressData: ProgressItem[] = [
-  {
-    id: 'task-1',
-    label: '待处理',
-    value: 1,
-    total: 1,
-    status: 'pending'
-  }
-]
-</script>
-```
-
-### 5. DataTable 数据表格
-```vue
-<template>
-  <DataTable
-    title="市场人员统计"
-    :columns="columns"
-    :data="tableData"
-    :searchable="true"
-    :show-pagination="true"
-  />
-</template>
-
-<script setup lang="ts">
-import { DataTable, type TableColumn } from '@/components/dashboard'
-
-const columns: TableColumn[] = [
-  { key: 'name', label: '姓名', sortable: true },
-  { key: 'amount', label: '金额', sortable: true },
-  { key: 'status', label: '状态', sortable: false }
-]
-
-const tableData = [
-  {
-    id: '1',
-    name: 'Bingsong Wu',
-    amount: '¥2,152.62',
-    status: 'active'
-  }
-]
-</script>
-```
-
-## 🎨 主题和样式
-
-### 颜色主题
-组件包提供了统一的颜色主题：
-- `blue` - 主要色彩
-- `green` - 成功/正常状态
-- `yellow` - 警告状态
-- `red` - 错误/危险状态
-- `purple` - 信息状态
-- `gray` - 中性状态
-
-### 响应式设计
-所有组件都支持响应式设计，在不同屏幕尺寸下自动调整布局。
-
-## 🛠️ 工具函数
-
-### 格式化函数
+### 时间格式化
 ```typescript
-import { formatCurrency, formatPercentage, formatDateTime } from '@/components/dashboard'
+// 相对时间显示
+const formatTime = (date: Date) => {
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const minutes = Math.floor(diff / (1000 * 60))
 
-// 格式化货币
-const amount = formatCurrency(1234.56) // ¥1,234.56
-
-// 格式化百分比
-const percent = formatPercentage(0.1234, true) // 12.3%
-
-// 格式化日期
-const date = formatDateTime(new Date(), 'datetime') // 2024/6/16 13:30:00
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  // ...
+}
 ```
 
-### 性能优化函数
+## 数据接口
+
+### 告警数据
 ```typescript
-import { debounce, throttle } from '@/components/dashboard'
-
-// 防抖
-const debouncedSearch = debounce((query: string) => {
-  // 搜索逻辑
-}, 300)
-
-// 节流
-const throttledScroll = throttle(() => {
-  // 滚动处理逻辑
-}, 100)
-```
-
-## 📋 类型定义
-
-### StatisticItem
-```typescript
-interface StatisticItem {
+interface AlertItem {
   id: string
-  title: string
-  value: string | number
-  change?: string
-  trend?: 'up' | 'down' | 'neutral'
-  icon: any
-  color?: 'blue' | 'green' | 'yellow' | 'purple' | 'red' | 'gray'
-  unit?: string
-  description?: string
+  level: 'high' | 'medium' | 'low'
+  message: string
+  timestamp: Date
+  source: string
 }
 ```
 
-### ProgressItem
+### 交易数据
 ```typescript
-interface ProgressItem {
+interface TransactionItem {
   id: string
-  label: string
-  value: number
-  total: number
-  status: 'completed' | 'active' | 'pending' | 'error'
-  color?: string
-  details?: string
+  amount: number
+  type: string
+  status: 'completed' | 'pending' | 'failed'
+  riskLevel: 'high' | 'medium' | 'low'
+  timestamp: Date
 }
 ```
 
-### TableColumn
+### 地域统计
 ```typescript
-interface TableColumn {
-  key: string
-  label: string
-  sortable?: boolean
-  width?: string
-  align?: 'left' | 'center' | 'right'
-  formatter?: (value: any) => string
+interface RegionStatsItem {
+  name: string
+  count: number
+  percentage: string
+  color: string
+  variant: 'default' | 'secondary' | 'destructive' | 'outline'
 }
 ```
 
-## 🔧 配置选项
+## 配置选项
 
-### 默认配置
+### 自动刷新配置
 ```typescript
-import { DEFAULT_COLORS, DEFAULT_CHART_CONFIG, DEFAULT_TABLE_CONFIG } from '@/components/dashboard'
+// 在 composable 中配置
+const { alerts } = useAlerts({
+  autoRefresh: true,
+  refreshInterval: 30000  // 30秒
+})
 ```
 
-## 📝 开发规范
+## 开发说明
 
-### 代码规范
-1. **DRY原则** - 避免重复代码，提取公共逻辑
-2. **注释规范** - 所有公共函数和复杂逻辑都需要添加注释
-3. **类型安全** - 使用TypeScript类型定义确保类型安全
-4. **响应式设计** - 所有组件都需要支持响应式布局
+### 组件架构
+采用 Vue 3 Composition API 设计，每个组件都有对应的 composable 来管理业务逻辑。
 
-### 组件设计原则
-1. **单一职责** - 每个组件只负责一个功能
-2. **可复用性** - 组件设计要考虑复用性
-3. **可配置性** - 提供足够的配置选项
-4. **性能优化** - 使用适当的性能优化技术
+### 技术栈
+- Vue 3 + TypeScript
+- Tailwind CSS + shadcn/ui
+- Lucide Vue (图标库)
+- Pinia (状态管理)
 
-## 🚀 未来规划
+### 文件结构
+```
+dashboard/
+├── index.ts                 # 统一导出
+├── KeyMetricsSection.vue    # 关键指标组件
+├── AlertsSection.vue        # 告警信息组件
+├── SystemStatusSection.vue  # 系统状态组件
+├── RegionStatsSection.vue   # 地域统计组件
+├── TransactionSection.vue   # 交易数据组件
+├── useMetrics.ts           # 指标数据逻辑
+├── useAlerts.ts            # 告警数据逻辑
+├── useSystemMonitor.ts     # 系统监控逻辑
+├── useRegionStats.ts       # 地域统计逻辑
+├── useTransactions.ts      # 交易数据逻辑
+└── useHealthCalculator.ts  # 健康度计算逻辑
+```
 
-- [ ] 添加更多图表类型支持
-- [ ] 集成真实的图表库 (Chart.js/ECharts)
-- [ ] 添加主题切换功能
-- [ ] 支持自定义组件样式
-- [ ] 添加组件单元测试
-- [ ] 支持国际化
+### 设计原则
+1. 组件只负责 UI 渲染
+2. 业务逻辑封装在 composable 中
+3. 数据和 UI 完全分离
+4. 支持自动数据刷新和错误处理
 
-## 📄 版本信息
+## 版本信息
 
-- **版本**: 1.0.0
-- **作者**: Hyphen
-- **创建日期**: 2024-06-16
-- **最后更新**: 2024-06-16
-
-## 🤝 贡献指南
-
-1. Fork 项目
-2. 创建功能分支
-3. 提交更改
-4. 推送到分支
-5. 创建 Pull Request
-
-## 📞 支持
-
-如有问题或建议，请联系开发团队或创建 Issue。
+当前版本：1.0.0
+最后更新：2025-07-11

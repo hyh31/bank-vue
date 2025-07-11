@@ -139,6 +139,22 @@ export function useTransactions(options: TransactionOptions = {}) {
     }
 
     /**
+     * 告警中文的提示
+     */
+    const getRiskLevelText = (riskLevel: string) => {
+        switch(riskLevel) {
+            case 'high':
+                return '高风险'
+            case 'medium':
+                return '中风险'
+            case 'low':
+                return '低风险'
+            default:
+                return '未知'
+        }
+    }
+
+    /**
      * 自动刷新
      */
     const startAutoRefresh = () => {
@@ -180,6 +196,7 @@ export function useTransactions(options: TransactionOptions = {}) {
         getRiskVariant,
         formatTime,
         startAutoRefresh,
-        stopAutoRefresh
+        stopAutoRefresh,
+        getRiskLevelText
     }
 }

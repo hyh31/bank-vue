@@ -25,8 +25,8 @@
           </div>
           <div class="flex items-center text-xs text-muted-foreground">
             <component
-              :is="getTrendIcon(metric.trend)"
-              :class="['h-3 w-3 mr-1', getTrendColor(metric.trend)]"
+              :is="getTrendIconComponent(getTrendIcon(metric.trend))"
+              :class="['h-3 w-3 mr-1', getTrendIconComponent(getTrendIcon(metric.trend))]"
             />
             <span :class="getTrendColor(metric.trend)">{{ metric.change }}</span>
             <span class="ml-1">较{{ getCompareText(metric.compareType) }}</span>
@@ -44,7 +44,7 @@ import { useHealthCalculator } from './useHealthCalculator'
 import { useSystemMonitor } from './useSystemMonitor'
 
 // 使用组合式函数管理状态
-const { metrics, initializeMetrics, updateMetric, getTrendIcon, getTrendColor, getCompareText, getDefaultMetrics, getIconComponent } = useMetrics()
+const { metrics, initializeMetrics, updateMetric, getTrendIcon, getTrendColor, getCompareText, getDefaultMetrics, getIconComponent, getTrendIconComponent } = useMetrics()
 const { calculateHealth, calculateTrend } = useHealthCalculator()
 const { status } = useSystemMonitor()
 

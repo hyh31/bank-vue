@@ -104,6 +104,10 @@ export function useMetrics() {
         return iconMap[iconName] || Activity
     }
 
+    const getTrendIconComponent = (trend: string) => {
+        return getIconComponent(getTrendIcon(trend))
+    }
+
     /**
      * 默认配置
      */
@@ -159,6 +163,7 @@ export function useMetrics() {
         getTrendColor,
         getCompareText,
         getDefaultMetrics,
-        getIconComponent
+        getIconComponent,
+        getTrendIconComponent
     }
 }
