@@ -12,17 +12,21 @@ import {
   SidebarMenuSubItem
 } from '@/components/ui/sidebar'
 
+interface NavItem {
+  title: string
+  url: string
+  icon?: LucideIcon 
+  isActive?: boolean
+  items?: NavSubItem[]
+}
+
+interface NavSubItem {
+  title: string
+  url: string
+}
+
 interface Props {
-  items: {
-    title: string
-    url: string
-    icon?: LucideIcon
-    isActive?: boolean
-    items?: {
-      title: string
-      url: string
-    }[]
-  }[]
+  items: NavItem[]
 }
 
 interface Emits {

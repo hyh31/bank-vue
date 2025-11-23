@@ -114,29 +114,6 @@ const data = {
   ],
   navMain: [
     {
-      title: '告警监控',
-      url: '#',
-      icon: Bell,
-      items: [
-        {
-          title: '实时告警大屏',
-          url: '#'
-        },
-        {
-          title: '告警统计分析',
-          url: '#'
-        },
-        {
-          title: '系统健康监控',
-          url: '#'
-        },
-        {
-          title: '业务风险监控',
-          url: '#'
-        }
-      ]
-    },
-    {
       title: '告警中心',
       url: '#',
       icon: AlertTriangle,
@@ -150,11 +127,7 @@ const data = {
           url: 'alert-monitoring'
         },
         {
-          title: '告警配置',
-          url: '#'
-        },
-        {
-          title: '历史记录',
+          title: '规则配置',
           url: '#'
         }
       ]
@@ -169,15 +142,7 @@ const data = {
           url: '#'
         },
         {
-          title: '网络监控',
-          url: '#'
-        },
-        {
           title: '数据库监控',
-          url: '#'
-        },
-        {
-          title: '应用服务监控',
           url: '#'
         }
       ]
