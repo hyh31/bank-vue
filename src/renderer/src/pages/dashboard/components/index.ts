@@ -16,12 +16,12 @@ export { default as SystemStatusSection } from './SystemStatusSection.vue'
 export { default as TransactionSection } from './TransactionSection.vue'
 
 // Composables
-export { useMetrics } from './useMetrics'
-export { useRegionStats } from './useRegionStats'
-export { useAlerts } from './useAlerts'
-export { useTransactions } from './useTransactions'
-export { useHealthCalculator } from './useHealthCalculator'
-export { useSystemMonitor } from './useSystemMonitor'
+export { useMetrics } from '../composables/useMetrics'
+export { useRegionStats } from '../composables/useRegionStats'
+export { useAlerts } from '../composables/useAlerts'
+export { useTransactions } from '../composables/useTransactions'
+export { useHealthCalculator } from '../composables/useHealthCalculator'
+export { useSystemMonitor } from '../composables/useSystemMonitor'
 
 /**
  * 组件版本信息

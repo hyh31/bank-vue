@@ -288,6 +288,53 @@ export const getRiskLevelColor = (level: string): string => {
 }
 
 /**
+ * 格式化相对时间
+ * @param date 日期对象或时间字符串
+ * @return 相对时间字符串（如：刚刚、5分钟前）
+ */
+export const formatTime = (date: Date | string) => {
+  const date1 = date instanceof Date ? date : new Date(date)
+  const now = new Date()
+  const diff = now.getTime() - date1.getTime()
+  const minutes = Math.floor(diff / (1000 * 60))
+
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}小时前`
+
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}天前`
+
+  return date1.toLocaleDateString('zh-CN')
+}
+
+/**
+ * 根据告警类型获取默认标题
+ * @param alertType 告警类型
+ * @return 告警标题
+ */
+export const getDefaultTitle = (alertType: string) => {
+  switch (alertType) {
+    case 'cpu':
+      return 'CPU性能告警'
+    case 'memory':
+      return '内存性能告警'
+    case 'network':
+      return '网络性能告警'
+    case 'business':
+      return '业务告警'
+    case 'performance':
+      return '性能告警'
+    case 'system':
+      return '系统告警'
+    default:
+      return '系统告警'
+  }
+}
+
+/**
  * 导出所有工具函数
  */
 export default {
@@ -318,5 +365,8 @@ export default {
 
   // 颜色
   getStatusColor,
-  getRiskLevelColor
+  getRiskLevelColor,
+
+  // 格式化时间
+  formatTime
 }

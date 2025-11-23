@@ -12,7 +12,7 @@ import {
   SidebarMenuSubItem
 } from '@/components/ui/sidebar'
 
-defineProps<{
+interface Props {
   items: {
     title: string
     url: string
@@ -23,7 +23,20 @@ defineProps<{
       url: string
     }[]
   }[]
-}>()
+}
+
+interface Emits {
+  (e: 'navigate', url: string): void
+}
+
+defineProps<Props>()
+const emit = defineEmits<Emits>()
+
+const handleNavigate = (url: string) => {
+  if (url !== '#') {
+    emit('navigate', url)
+  }
+}
 </script>
 
 <template>
@@ -50,10 +63,8 @@ defineProps<{
           <CollapsibleContent>
             <SidebarMenuSub>
               <SidebarMenuSubItem v-for="subItem in item.items" :key="subItem.title">
-                <SidebarMenuSubButton as-child>
-                  <a :href="subItem.url">
-                    <span>{{ subItem.title }}</span>
-                  </a>
+                <SidebarMenuSubButton @click="handleNavigate(subItem.url)">
+                  <span>{{ subItem.title }}</span>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
             </SidebarMenuSub>

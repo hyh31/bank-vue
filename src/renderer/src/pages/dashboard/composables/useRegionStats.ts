@@ -1,6 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
-
 /**
  * 地域统计数据接口
  */
@@ -74,6 +73,10 @@ export function useRegionStats(options: RegionStatsOptions = {}) {
         try{
             isLoading.value = true
             error.value = null
+
+            // 清除旧的数据
+            regionStats.value = []
+
             console.log('正在获取昨日地域分布统计数据')
             const res = await (window.api as any).fetchData()
             console.log(res)   // 打印数据
@@ -99,6 +102,7 @@ export function useRegionStats(options: RegionStatsOptions = {}) {
                 color: getColorByRegin(item.province),
                 variant: 'default' as const
             }))
+            startRegionAutoScroll()
         } catch (err) {
             error.value = '获取数据失败'
         } finally {
@@ -112,7 +116,15 @@ export function useRegionStats(options: RegionStatsOptions = {}) {
      */
     const startRegionAutoScroll = () => {
         // 数量小于4个就不需要滚动了
-        if (regionStats.value.length <= 4) return
+        if (regionStats.value.length <= 4) {
+            if (isRegionScrolling.value) {
+                stopRegionAutoScroll()
+            }
+            return
+        }
+
+        // 防止重复启动
+        if (isRegionScrolling.value) return
 
         isRegionScrolling.value = true
         const itemHeight = 60
@@ -121,7 +133,7 @@ export function useRegionStats(options: RegionStatsOptions = {}) {
         const scroll = () => {
             if (!isRegionScrolling.value) return
 
-            regionScrollOffset.value += 0.5
+            regionScrollOffset.value += 0.3
 
             if (regionScrollOffset.value >= totalHeight) {
                 regionScrollOffset.value = 0

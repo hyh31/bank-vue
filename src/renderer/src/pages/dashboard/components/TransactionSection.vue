@@ -80,7 +80,7 @@ import { Database, RefreshCw } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableRow, TableCell, TableHead, TableHeader } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { useTransactions } from './useTransactions'
+import { useTransactions } from '../composables/useTransactions'
 
 const { transactionData, isLoading, formatCurrency, getStatusVariant, getRiskVariant, formatTime, getRiskLevelText } = useTransactions()
 

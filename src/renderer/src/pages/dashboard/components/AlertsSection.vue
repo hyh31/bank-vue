@@ -26,7 +26,7 @@
                 <!-- 告警列表 -->
                 <div
                 v-for="alert in alerts"
-                :key="alert.id"
+                :key="alert.alertId"
                 class="p-3 rounded-lg border hover:bg-muted/50 transition-all duration-300 cursor-pointer mb-3"
                 style="height: 88px;"
                 >
@@ -44,7 +44,7 @@
                                 {{ alert.description }}
                             </div>
                             <div class="text-xs text-muted-foreground mt-1">
-                                {{ alert.timestamp }}
+                                {{ formatTime(alert.createTime) }}
                             </div>
                         </div>
                         <Badge :variant="getAlertVariant(alert.level)" class="text-xs">
@@ -53,8 +53,9 @@
                     </div>
                 </div>
                 <div
+                v-if="alerts.length > 2"
                 v-for="alert in alerts"
-                :key="`copy-${alert.id}`"
+                :key="`copy-${alert.alertId}`"
                 class="p-3 rounded-lg border hover:bg-muted/50 transition-all duration-300 cursor-pointer mb-3"
                 style="height: 88px;"
                 >
@@ -72,7 +73,7 @@
                                 {{ alert.description }}
                             </div>
                             <div class="text-xs text-muted-foreground mt-1">
-                                {{ alert.timestamp }}
+                                {{ formatTime(alert.createTime) }}
                             </div>
                         </div>
                         <Badge :variant="getAlertVariant(alert.level)" class="text-xs">
@@ -94,9 +95,11 @@
 import { AlertTriangle } from 'lucide-vue-next'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useAlerts } from './useAlerts'
+import { useAlerts } from '../composables/useAlerts'
+import { useAlertsLifecycle } from '../composables/useAlertsLifecycle'
+import { formatTime } from '@renderer/utils'
 
 // 使用逐条向上滚动（每2秒向上滚动一条告警）
-const { alerts, currentIndex, isLoading, alertContainer, getAlertIcon, getAlertIconColor, getAlertVariant, getAlertsLevelText } = useAlerts()
-
+const { getAlertIcon, getAlertIconColor, getAlertVariant, getAlertsLevelText } = useAlerts()
+const { alerts, currentIndex, isLoading, alertContainer } = useAlertsLifecycle()
 </script>

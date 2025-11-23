@@ -5,10 +5,10 @@ import { API_BASE_URL } from '../constants'
  * 获取告警列表
  */
 export async function fetchAlertsHandler(_, params) {
-    const { limit = 10 } = params || {}
+    const { limit = 10, status = 'pending,processing' } = params || {}
     try {
         console.log('获取告警列表：', { limit })
-        const response = await axios.get(`${API_BASE_URL}/Bank/alerts?limit=${limit}`)
+        const response = await axios.get(`${API_BASE_URL}/Bank/alerts?limit=${limit}&status=${status}`)
         
         return {
             success: true,
@@ -28,58 +28,93 @@ export async function fetchAlertsHandler(_, params) {
 }
 
 /**
- * 创建性能告警
+ * 获取告警分页列表
+ * (告警中心)
  */
-export async function createPerformanceAlertHandler(_, params) {
-    const { level, message, clientId, metrics } = params || {}
+export async function fetchAlertsPageHandler(_, params) {
     try {
-        console.log('创建性能告警：', { level, message, clientId })
-        const response = await axios.post(`${API_BASE_URL}/Bank/alerts/performance`, {
-            level,
-            message,
-            clientId,
-            metrics
+        // 构建查询字符串，处理数组参数
+        const queryParams = new URLSearchParams()
+
+        Object.entries(params).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+                // 数组参数：levels=critical&levels=warning
+                value.forEach(item => queryParams.append(key, item))
+            } else if (value !== undefined && value !== null && value !== '') {
+                // 普通参数
+                queryParams.append(key, String(value))
+            }
         })
-        
+
+        const queryString = queryParams.toString()
+        const url = `${API_BASE_URL}/Bank/alerts/page${queryString ? '?' + queryString : ''}`
+
+        console.log('请求URL:', url)
+        console.log('原始参数:', params)
+
+        const resp = await axios.get(url)
         return {
             success: true,
-            data: response.data.data || {},
-            message: '性能告警创建成功',
+            data: resp.data.data || resp.data,
+            message: '告警分页列表获取成功',
             timestamp: new Date().toISOString()
         }
-    } catch(error: any) {
-        console.error('创建性能告警失败：', error)
+    } catch (error: any) {
+        console.log('获取告警分页列表失败：', error)
         return {
             success: false,
             data: null,
-            message: error.message || '性能告警创建失败',
+            message: error.message || '告警分页列表获取失败',
             error: error.response?.data || error.message
         }
     }
 }
 
 /**
- * 关闭性能告警
+ * 获取告警详情
  */
-export async function closePerformanceAlertHandler(_, params) {
-    const { alertId } = params || {}
+export async function fetchAlertDetailHandler(_, alertId) {
     try {
-        console.log('关闭性能告警：', { alertId })
+        console.log('获取告警详情：', alertId)
 
-        const response = await axios.put(`${API_BASE_URL}/Bank/alerts/performance/${alertId}/close`)
-        
+        const resp = await axios.get(`${API_BASE_URL}/Bank/alerts/${alertId}`)
         return {
             success: true,
-            data: response.data.data || {},
-            message: '性能告警关闭成功',
+            data: resp.data.data || resp.data,
+            message: '告警详情获取成功',
             timestamp: new Date().toISOString()
         }
     } catch (error: any) {
-        console.error('关闭性能告警失败：', error)
+        console.log('获取告警详情失败：', error)
         return {
             success: false,
             data: null,
-            message: error.message || '性能告警关闭失败',
+            message: error.message || '告警详情获取失败',
+            error: error.response?.data || error.message
+        }
+    }
+}
+
+/**
+ * 获取告警统计数据
+ */
+export async function fetchAlertStatisticsHandler(_) {
+    try {
+        console.log('获取告警统计数据')
+
+        const resp = await axios.get(`${API_BASE_URL}/Bank/alerts/statistics`)
+        return {
+            success: true,
+            data: resp.data.data || resp.data,
+            message: '告警统计数据获取成功',
+            timestamp: new Date().toISOString()
+        }
+    } catch(error: any) {
+        console.log('获取告警统计数据失败：', error)
+        return {
+            success: false,
+            data: null,
+            message: error.message || '告警统计数据获取失败',
             error: error.response?.data || error.message
         }
     }

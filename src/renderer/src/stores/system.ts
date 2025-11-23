@@ -1,6 +1,7 @@
 import { SystemInfo, SystemStatus } from '@renderer/types/system'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useAlertsStore } from './alerts'
 
 export const useSystemStore = defineStore('system', () => {
 
@@ -17,6 +18,7 @@ export const useSystemStore = defineStore('system', () => {
             error.value = null
             const response = await window.api.getSystemStatus()
             status.value = response
+            await checkSystemAlerts(response)
         } catch (err) {
             error.value = err instanceof Error ? err.message : '获取系统状态失败'
         } finally {
@@ -35,6 +37,24 @@ export const useSystemStore = defineStore('system', () => {
             error.value = err instanceof Error ? err.message : '获取系统信息失败'
         } finally {
             isLoading.value = false
+        }
+    }
+
+    // 检查系统告警
+    const checkSystemAlerts = async (systemStatus: any) => {
+        const alertsStore = useAlertsStore()
+        try {
+            // 检查数据库连接
+            if (systemStatus.database.status === 'critical') {
+                alertsStore.showDatabaseError()
+            } else {
+                if (!alertsStore.isDatabaseConnected) {
+                    alertsStore.isDatabaseConnected = true
+                    await alertsStore.fetchAlerts()
+                }
+            }
+        } catch (error) {
+            console.error('检查系统告警失败:', error)
         }
     }
 

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, nextTick, onBeforeUnmount, onBeforeMount } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
-import Dashboard from '@/components/Dashboard.vue'
+import Dashboard from '@renderer/pages/dashboard/Dashboard.vue'
 import DataVisualizationDashboard from '@/components/DataVisualizationDashboard.vue'
+import AlertCenter from '@/pages/alert-center/AlertCenter.vue'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { fixElectrionAPI } from '@shared/handlers/fixElectronAPI'
 
@@ -13,7 +14,7 @@ onBeforeMount(() => {
 /**
  * 当前活动视图类型
  */
-type ViewType = 'dashboard' | 'data-visualization'
+type ViewType = 'dashboard' | 'data-visualization' | 'alert-center' | 'alert-monitoring'
 
 /**
  * 当前活动视图
@@ -25,6 +26,7 @@ const currentView = ref<ViewType>('dashboard')
  */
 const dashboardRef = ref<InstanceType<typeof Dashboard> | null>(null)
 const dataVisualizationRef = ref<InstanceType<typeof DataVisualizationDashboard> | null>(null)
+const alertCenterRef = ref<InstanceType<typeof AlertCenter> | null>(null)
 
 /**
  * ECharts实例安全操作函数
@@ -58,7 +60,8 @@ const cleanupCurrentViewCharts = () => {
 const switchView = async (view: string) => {
 
   // 类型检查
-  if (view !== 'dashboard' && view !== 'data-visualization') {
+  const validViews = ['dashboard', 'data-visualization', 'alert-center', 'alert-monitoring']
+  if (!validViews.includes(view)) {
     console.error('无效的视图类型:', view)
     return
   }
@@ -80,14 +83,25 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <SidebarProvider>
+  <SidebarProvider class="h-full">
     <AppSidebar :current-view="currentView" @view-change="switchView" />
-    <SidebarInset>
+    <SidebarInset class="h-full">
       <!-- 银行监控告警系统主仪表盘 -->
       <Dashboard v-if="currentView === 'dashboard'" ref="dashboardRef" />
 
       <!-- 数据可视化页面 -->
       <DataVisualizationDashboard v-else-if="currentView === 'data-visualization'" ref="dataVisualizationRef" />
+
+      <!-- 告警中心页面 -->
+      <AlertCenter v-else-if="currentView === 'alert-center'" ref="alertCenterRef" />
+
+      <!-- 告警监控页面 (待实现) -->
+      <div v-else-if="currentView === 'alert-monitoring'" class="flex items-center justify-center h-full">
+        <div class="text-center">
+          <h2 class="text-2xl font-semibold mb-2">告警监控</h2>
+          <p class="text-muted-foreground">功能开发中...</p>
+        </div>
+      </div>
     </SidebarInset>
   </SidebarProvider>
 </template>

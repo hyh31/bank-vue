@@ -65,6 +65,14 @@ const handleMainViewChange = (view: string) => {
   emit('view-change', view)
 }
 
+/**
+ * 处理导航点击
+ */
+const handleNavigate = (url: string) => {
+  console.log('侧边栏导航:', url)
+  emit('view-change', url)
+}
+
 // 银行监控告警系统数据
 const data = {
   user: {
@@ -134,12 +142,12 @@ const data = {
       icon: AlertTriangle,
       items: [
         {
-          title: '实时告警',
-          url: '#'
+          title: '告警中心',
+          url: 'alert-center'
         },
         {
-          title: '告警统计',
-          url: '#'
+          title: '告警监控',
+          url: 'alert-monitoring'
         },
         {
           title: '告警配置',
@@ -244,7 +252,7 @@ const data = {
       </SidebarGroup>
 
       <!-- 原有导航 -->
-      <NavMain :items="data.navMain" />
+      <NavMain :items="data.navMain" @navigate="handleNavigate" />
       <NavProjects :projects="data.projects" />
     </SidebarContent>
     <SidebarFooter>

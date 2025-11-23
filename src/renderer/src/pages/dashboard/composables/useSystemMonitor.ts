@@ -22,7 +22,7 @@ export function useSystemMonitor(options: SystemMonitorOptions = {}) {
     } = options
 
     const systemStore = useSystemStore()
-    const { status, info, isLoading, error } = storeToRefs(systemStore)
+    const { status, isLoading, error } = storeToRefs(systemStore)
 
     // 显示系统状态
 

@@ -39,14 +39,16 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { useMetrics } from './useMetrics'
-import { useHealthCalculator } from './useHealthCalculator'
-import { useSystemMonitor } from './useSystemMonitor'
+import { useMetrics } from '../composables/useMetrics'
+import { useHealthCalculator } from '../composables/useHealthCalculator'
+import { useSystemStore } from '@renderer/stores/system'
+import { storeToRefs } from 'pinia'
 
 // 使用组合式函数管理状态
 const { metrics, initializeMetrics, updateMetric, getTrendIcon, getTrendColor, getCompareText, getDefaultMetrics, getIconComponent, getTrendIconComponent } = useMetrics()
 const { calculateHealth, calculateTrend } = useHealthCalculator()
-const { status } = useSystemMonitor()
+const systemStore = useSystemStore()
+const { status } = storeToRefs(systemStore)
 
 /**
  * 挂载

@@ -41,6 +41,7 @@
           
           <!-- 复制的地域列表，用于无缝循环 -->
           <div
+            v-if="regionStats.length > 3"
             v-for="region in regionStats"
             :key="`copy-${region.name}`"
             class="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
@@ -69,7 +70,7 @@
 import { BarChart3 } from 'lucide-vue-next'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useRegionStats } from './useRegionStats'
+import { useRegionStats } from '../composables/useRegionStats'
 
 const { regionStats, regionScrollOffset, isRegionScrolling, isLoading } = useRegionStats()
 </script>

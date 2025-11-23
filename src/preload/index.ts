@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { SystemStatus } from '@shared/types'
+import { fetchAlertsPageHandler } from '@shared/handlers/fetch-alerts'
 
 // 数据获取参数接口
 interface DataFetchParams {
@@ -31,6 +32,11 @@ interface ApiResponse<T = any> {
 // 告警相关参数接口
 interface AlertsParams {
   limit?: number
+  offset?: number
+  level?: 'critical' | 'warning' | 'info'
+  type?: 'business' | 'system' | 'security' | 'compliance' | 'performance'
+  status?: 'pending' | 'processing' | 'resolved' | 'ignored'
+  clientId?: string
 }
 
 interface CreatePerformanceAlertParams {
@@ -61,10 +67,12 @@ const api = {
 
   // 告警相关API
   fetchAlerts: (params?: AlertsParams): Promise<ApiResponse> => ipcRenderer.invoke('fetch-alerts', params),
-  createPerformanceAlert: (params: CreatePerformanceAlertParams): Promise<ApiResponse> =>
-    ipcRenderer.invoke('create-performance-alert', params),
-  closePerformanceAlert: (params: ClosePerformanceAlertParams): Promise<ApiResponse> =>
-    ipcRenderer.invoke('close-performance-alert', params)
+  fetchAlertsPage: (params?: any): Promise<ApiResponse> => ipcRenderer.invoke('fetch-alerts-page', params),
+  fetchAlertDetail: (alertId: string): Promise<ApiResponse> => ipcRenderer.invoke('fetch-alert-detail', alertId),
+  // createPerformanceAlert: (params: CreatePerformanceAlertParams): Promise<ApiResponse> =>
+  //   ipcRenderer.invoke('create-performance-alert', params),
+  // closePerformanceAlert: (params: ClosePerformanceAlertParams): Promise<ApiResponse> =>
+  //   ipcRenderer.invoke('close-performance-alert', params)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

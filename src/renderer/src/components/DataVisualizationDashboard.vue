@@ -299,7 +299,7 @@ import RealtimeDataStream from '@/components/charts/RealtimeDataStream.vue'
 import IPCTest from '@/components/test/IPCTest.vue'
 
 // 导入性能监控工具
-import { performanceMonitor } from '@/utils/performance'
+import { usePerformanceMonitor } from '@/composables/usePerformanceMonitor'
 
 /**
  * 可视化模块接口定义
@@ -310,6 +310,14 @@ interface VisualizationModule {
   icon: any
   description: string
 }
+
+/**
+ * 性能监控
+ */
+const { resetMetrics } = usePerformanceMonitor({
+  autoStart: true,
+  enableAlerts: false  // 在数据可视化页面暂时禁用告警
+})
 
 /**
  * 响应式数据
@@ -466,7 +474,7 @@ onUnmounted(() => {
   currentModule.value = 'transaction-trend'
 
   // 清理性能监控
-  performanceMonitor.cleanup()
+  resetMetrics()
 
   console.log('✅ 数据可视化大屏组件卸载完成')
 })

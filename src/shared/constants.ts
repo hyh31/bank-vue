@@ -1,1 +1,1 @@
-export const API_BASE_URL = 'http://192.168.3.67:9090'
+export const API_BASE_URL = 'http://localhost:9090'

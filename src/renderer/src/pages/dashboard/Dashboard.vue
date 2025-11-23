@@ -80,7 +80,7 @@ import {
   RegionStatsSection,
   SystemStatusSection,
   TransactionSection
-} from './dashboard'
+} from './components'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   Activity,

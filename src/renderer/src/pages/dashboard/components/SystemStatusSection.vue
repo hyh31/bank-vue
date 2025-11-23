@@ -45,9 +45,9 @@
 
 <script setup lang="ts">
 import { Activity } from 'lucide-vue-next'
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card'
-import { useSystemMonitor } from './useSystemMonitor'
-import Badge from '../ui/badge/Badge.vue'
+import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
+import { useSystemMonitor } from '../composables/useSystemMonitor'
+import Badge from '@/components/ui/badge/Badge.vue'
 
 // 使用系统状态
 const { systemStatusList, isLoading } = useSystemMonitor()
