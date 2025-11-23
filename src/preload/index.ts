@@ -28,6 +28,22 @@ interface ApiResponse<T = any> {
   error?: any
 }
 
+// 告警相关参数接口
+interface AlertsParams {
+  limit?: number
+}
+
+interface CreatePerformanceAlertParams {
+  level: string
+  message: string
+  clientId: string
+  metrics: string
+}
+
+interface ClosePerformanceAlertParams {
+  alertId: string
+}
+
 // Custom APIs for renderer
 const api = {
   // 系统监控API
@@ -41,7 +57,14 @@ const api = {
 
   // 总览模式专用API
   fetchOverviewData: (params: OverviewDataParams): Promise<ApiResponse> =>
-    ipcRenderer.invoke('fetch-overview-data', params)
+    ipcRenderer.invoke('fetch-overview-data', params),
+
+  // 告警相关API
+  fetchAlerts: (params?: AlertsParams): Promise<ApiResponse> => ipcRenderer.invoke('fetch-alerts', params),
+  createPerformanceAlert: (params: CreatePerformanceAlertParams): Promise<ApiResponse> =>
+    ipcRenderer.invoke('create-performance-alert', params),
+  closePerformanceAlert: (params: ClosePerformanceAlertParams): Promise<ApiResponse> =>
+    ipcRenderer.invoke('close-performance-alert', params)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

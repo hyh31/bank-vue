@@ -7,7 +7,7 @@ interface AlertItem {
     title: string
     description: string
     level: 'critical' | 'warning' | 'info'
-    timestamp: Date
+    timestamp: string
 }
 
 /**
@@ -91,33 +91,88 @@ export function useAlerts(options: AlertsOptions = {}) {
             isLoading.value = true
             error.value = null
 
-            alerts.value = [
-                {
-                    id: 'alert-1',
-                    title: '异常大额转账检测',
-                    description: '账户 ****1234 发生单笔 500万 转账，超出日常交易阈值',
-                    level: 'critical',
-                    timestamp: new Date(Date.now() - 5 * 60 * 1000) // 5分钟前
-                },
-                {
-                    id: 'alert-2',
-                    title: '可疑登录行为',
-                    description: '用户 张三 在异地IP登录，存在账户安全风险',
-                    level: 'warning',
-                    timestamp: new Date(Date.now() - 15 * 60 * 1000) // 15分钟前
-                },
-                {
-                    id: 'alert-3',
-                    title: '系统性能监控',
-                    description: '核心交易系统CPU使用率达到85%，建议关注',
-                    level: 'info',
-                    timestamp: new Date(Date.now() - 30 * 60 * 1000) // 30分钟前
-                }
-            ]
+            console.log('正在获取告警数据...')
+
+            const result = await (window.api as any).fetchAlerts({ limit: 10 })
+            console.log(result)
+            if (result.success) {
+                alerts.value = result.data.map((item: any) => ({
+                    id: item.alertId || item.id,
+                    level: item.level,
+                    title: item.title || getDefaultTitle(item.alertType),
+                    description: item.message,
+                    timestamp: formatTime((item.createTime).replace(' ', 'T'))
+                }))
+                console.log('告警数据获取成功，共', alerts.value.length, '条告警')
+            } else {
+                throw new Error(result.message || '获取告警数据失败')
+            }
         } catch (err) {
             error.value = err instanceof Error ? err.message : '获取告警数据失败'
         } finally {
             isLoading.value = false
+        }
+    }
+
+    /**
+     * 创建性能告警
+     */
+    const createPerformanceAlert = async (level: string, message: string, metrics: any) => {
+        try {
+            console.log('创建性能告警:', { level, message, metrics })
+
+            const result = await (window.api as any).createPerformanceAlert({
+                level,
+                message,
+                clientId: 'client-001',
+                metrics: JSON.stringify(metrics)
+            })
+            if (result.success) {
+                console.log('性能告警创建成功')
+                await fetchAlerts() // 刷新告警数据
+                return result.data
+            } else {
+                throw new Error(result.message || '创建性能告警失败')
+            }
+        } catch (error) {
+            console.error('创建性能告警失败:', error)
+            throw error
+        }
+    }
+
+    /**
+     * 关闭告警
+     */
+    const closePerformanceAlert = async (alertId: string) => {
+        try {
+            console.log('关闭性能告警：', alertId)
+            const result = await (window.api as any).closePerformanceAlert({ alertId })
+            if (result.success) {
+                console.log('性能告警关闭成功')
+                await fetchAlerts() // 刷新告警数据
+                return true
+            } else {
+                throw new Error(result.message || '关闭性能告警失败')
+            }
+        } catch (error) {
+            console.error('关闭性能告警失败:', error)
+            throw error
+        }
+    }
+
+    /**
+     * 根据告警类型获取默认标题
+     */
+    const getDefaultTitle = (alertType: string) => {
+        switch (alertType) {
+            case 'business':
+                return '业务告警'
+            case 'performance':
+                return '性能告警'
+            case 'system':
+                return '系统告警'
+            default:
+                return '系统告警'
         }
     }
 
@@ -172,18 +227,22 @@ export function useAlerts(options: AlertsOptions = {}) {
     /**
      * 格式化时间
      */
-    const formatTime = (date: Date) => {
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / (1000 * 60))
+    const formatTime = (date: Date | string) => {
+        const date1 = date instanceof Date ? date : new Date(date)
+        const now = new Date()
+        const diff = now.getTime() - date1.getTime()
+        const minutes = Math.floor(diff / (1000 * 60))
 
-    if (minutes < 1) return '刚刚'
-    if (minutes < 60) return `${minutes}分钟前`
+        if (minutes < 1) return '刚刚'
+        if (minutes < 60) return `${minutes}分钟前`
 
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}小时前`
+        const hours = Math.floor(minutes / 60)
+        if (hours < 24) return `${hours}小时前`
 
-    return date.toLocaleDateString('zh-CN')
+        const days = Math.floor(hours / 24)
+        if (days < 30) return `${days}天前`
+
+        return date1.toLocaleDateString('zh-CN')
     }
 
     /**
@@ -227,6 +286,8 @@ export function useAlerts(options: AlertsOptions = {}) {
         error,
         alertContainer,
         fetchAlerts,
+        createPerformanceAlert,
+        closePerformanceAlert,
         startAutoScroll,
         stopAutoScroll,
         startAutoRefresh,

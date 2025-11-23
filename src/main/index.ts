@@ -8,6 +8,11 @@ import { fetchBusinessDataHandler } from '../shared/handlers/fetch-business-data
 import { fetchOverviewDataHandler } from '../shared/handlers/fetch-overview-data'
 import { fetchDataHandler } from '../shared/handlers/fetchData'
 import { fetchRegionDataHandler } from '../shared/handlers/fetch-region-data'
+import {
+  fetchAlertsHandler,
+  createPerformanceAlertHandler,
+  closePerformanceAlertHandler
+} from '../shared/handlers/fetch-alerts'
 
 function createWindow(): void {
   // Create the browser window.
@@ -219,4 +224,9 @@ function setupDataFetching(): void {
 
   // 获取地域分布数据
   ipcMain.handle('fetch-region-data', fetchRegionDataHandler)
+
+  // 告警相关的handlers
+  ipcMain.handle('fetch-alerts', fetchAlertsHandler)
+  ipcMain.handle('create-performance-alert', createPerformanceAlertHandler)
+  ipcMain.handle('close-performance-alert', closePerformanceAlertHandler)
 }

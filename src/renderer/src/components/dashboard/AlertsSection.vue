@@ -44,7 +44,7 @@
                                 {{ alert.description }}
                             </div>
                             <div class="text-xs text-muted-foreground mt-1">
-                                {{ formatTime(alert.timestamp) }}
+                                {{ alert.timestamp }}
                             </div>
                         </div>
                         <Badge :variant="getAlertVariant(alert.level)" class="text-xs">
@@ -72,7 +72,7 @@
                                 {{ alert.description }}
                             </div>
                             <div class="text-xs text-muted-foreground mt-1">
-                                {{ formatTime(alert.timestamp) }}
+                                {{ alert.timestamp }}
                             </div>
                         </div>
                         <Badge :variant="getAlertVariant(alert.level)" class="text-xs">
@@ -97,6 +97,6 @@ import { Badge } from '@/components/ui/badge'
 import { useAlerts } from './useAlerts'
 
 // 使用逐条向上滚动（每2秒向上滚动一条告警）
-const { alerts, currentIndex, isLoading, alertContainer, getAlertIcon, getAlertIconColor, getAlertVariant, formatTime, getAlertsLevelText } = useAlerts()
+const { alerts, currentIndex, isLoading, alertContainer, getAlertIcon, getAlertIconColor, getAlertVariant, getAlertsLevelText } = useAlerts()
 
 </script>
